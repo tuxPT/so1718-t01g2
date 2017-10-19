@@ -1,6 +1,4 @@
 /**
- *  \file sbdealer.h
- *
  * \addtogroup dealers
  *
  * @{

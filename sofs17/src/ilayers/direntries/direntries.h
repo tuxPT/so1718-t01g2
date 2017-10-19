@@ -1,6 +1,4 @@
 /** 
- *  \file direntries.h
- *
  * \addtogroup ilayers
  *
  * @{

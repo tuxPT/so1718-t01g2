@@ -20,7 +20,9 @@
 /** \brief maximum length of volume name */
 #define PARTITION_NAME_SIZE 25
 
-/** \brief size of cache */
+/** \brief size of reference caches in superblock
+ * \ingroup constants 
+ */
 #define REFERENCE_CACHE_SIZE  53
 
 /**

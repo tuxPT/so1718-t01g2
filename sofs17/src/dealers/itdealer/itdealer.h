@@ -1,6 +1,4 @@
 /**
- *  \file itdealer.h
- *
  *  \addtogroup dealers
  *
  *  @{

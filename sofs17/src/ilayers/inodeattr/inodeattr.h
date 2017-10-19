@@ -1,6 +1,4 @@
 /**
- *  \file inodeattr.h
- *
  * \addtogroup ilayers
  *
  * @{

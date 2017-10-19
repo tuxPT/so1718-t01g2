@@ -1,6 +1,4 @@
 /**
- *  \file syscalls.h
- *
  * \defgroup syscalls syscalls
  *
  * \brief \em sofs17 system calls

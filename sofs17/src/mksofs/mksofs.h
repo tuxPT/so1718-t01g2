@@ -1,6 +1,4 @@
 /**
- * \file mksofs.h
- *
  * \addtogroup rawlevel 
  *
  * @{

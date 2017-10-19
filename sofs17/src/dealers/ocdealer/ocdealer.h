@@ -1,6 +1,4 @@
 /**
- *  \file ocdealer.h
- *
  * \addtogroup dealers
  *
  * @{
