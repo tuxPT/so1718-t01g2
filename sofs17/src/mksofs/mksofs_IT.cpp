@@ -1,3 +1,8 @@
+/**
+ *  \author João Paulo Alpendre Aniceto 72255
+ *  \tester João Paulo Alpendre Aniceto 72255
+ */
+
 #include "mksofs.h"
 #include "mksofs.bin.h"
 
