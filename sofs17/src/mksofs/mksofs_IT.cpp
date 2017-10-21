@@ -80,7 +80,7 @@ void fillInInodeTable(uint32_t itstart, uint32_t itsize)
 
 		}		
 	   
-	    inodeTable[1].prev = ittl-1;
+	    inodeTable[1].prev = uint32_t(ittl-1);
 	    soWriteRawBlock(itstart, &inodeTable);
 	    
 
@@ -94,8 +94,8 @@ void fillInInodeTable(uint32_t itstart, uint32_t itsize)
 		    {
 		        inodeTable[i].mode=INODE_FREE;
 
-		        inodeTable[i].prev = k-2;
-		        inodeTable[i].next = k+1>ittl ? 1:k++; 
+		        inodeTable[i].prev = uint32_t(k-2);
+		        inodeTable[i].next = k+1>ittl ? uint32_t(1):uint32_t(k++); 
 
 		        for (int k = 0; k < N_DIRECT; k++) {
 		            inodeTable[i].d[k] = NullReference;
