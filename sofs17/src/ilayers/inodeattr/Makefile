@@ -15,6 +15,7 @@ CXXFLAGS += -I "$(SRC_DIR)/rawdisk"
 CXXFLAGS += -I "$(SRC_DIR)/datatypes"
 CXXFLAGS += -I "$(SRC_DIR)/dealers/itdealer"
 CXXFLAGS += -m$(ARCH)
+CXXFLAGS += -fPIC
 
 SUFFIX = $(ARCH)
 

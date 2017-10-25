@@ -14,6 +14,7 @@ CXXFLAGS += -I $(SRC_DIR)/probing
 CXXFLAGS += -I $(SRC_DIR)/exception
 CXXFLAGS += -I $(SRC_DIR)/dealers/sbdealer
 CXXFLAGS += -m$(ARCH)
+CXXFLAGS += -fPIC
 
 SUFFIX = $(ARCH)
 

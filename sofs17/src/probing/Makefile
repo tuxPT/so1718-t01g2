@@ -10,6 +10,7 @@ CXX = g++
 CXXFLAGS = -Wall
 CXXFLAGS += -I "$(SRC_DIR)/exception"
 CXXFLAGS += -m$(ARCH)
+CXXFLAGS += -fPIC
 
 VERSION = sofs17
 

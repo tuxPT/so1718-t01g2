@@ -21,6 +21,7 @@ CXXFLAGS += -I $(SRC_DIR)/ilayers/inodeattr
 CXXFLAGS += -I $(SRC_DIR)/ilayers/fileclusters
 CXXFLAGS += -I $(SRC_DIR)/ilayers/direntries
 CXXFLAGS += -m$(ARCH)
+CXXFLAGS += -fPIC
 
 VERSION = sofs17
 

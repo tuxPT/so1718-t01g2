@@ -17,6 +17,7 @@ CXXFLAGS += -I "$(SRC_DIR)/dealers/czdealer"
 CXXFLAGS += -I "$(SRC_DIR)/dealers/itdealer"
 CXXFLAGS += -I "$(SRC_DIR)/ilayers/freelists"
 CXXFLAGS += -m$(ARCH)
+CXXFLAGS += -fPIC
 
 SUFFIX = $(ARCH)
 

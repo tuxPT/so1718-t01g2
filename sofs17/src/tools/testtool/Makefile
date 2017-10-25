@@ -1,4 +1,4 @@
-SRC_DIR = ../../
+SRC_DIR = ../..
 LIB_DIR = ../../../lib
 BIN_DIR = ../../../bin
 
@@ -22,6 +22,7 @@ CXXFLAGS += -I $(SRC_DIR)/ilayers/fileclusters
 CXXFLAGS += -I $(SRC_DIR)/ilayers/direntries
 CXXFLAGS += -I $(SRC_DIR)/ilayers/inodeattr
 CXXFLAGS += -m$(ARCH)
+CXXFLAGS += -fPIC
 
 SUFFIX = $(ARCH)
 
@@ -29,7 +30,7 @@ VERSION = sofs17
 
 TARGET_APP = testtool
 
-OBJS = testtool.o
+APP_OBJS = testtool.o
 
 LIBS += -Wl,--start-group
 LIBS += -l$(VERSION)Direntries
@@ -55,15 +56,16 @@ LFLAGS = -L $(LIB_DIR)
 LFLAGS += -L $(LIB_DIR)/lib$(ARCH)
 LFLAGS += $(LIBS)
 
-all:		$(OBJS) $(TARGET_APP)
+all:		$(APP_OBJS) $(TARGET_APP) clean
 
-$(TARGET_APP):	$(OBJS)
+$(TARGET_APP):	$(APP_OBJS)
+	@echo -e '\e[34;1;40;1mMaking $@...\e[m'
 	$(CXX) -o $@ $^ $(LFLAGS)
 	cp $@ $(BIN_DIR)
 	rm -f $^ $@
 
 clean:
-	rm -f $(TARGET_APP) $(OBJS)
+	rm -f $(TARGET_APP) $(APP_OBJS)
 	rm -f *~ 
 
 cleanall:	clean

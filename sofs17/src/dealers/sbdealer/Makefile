@@ -13,6 +13,7 @@ CXXFLAGS += -I $(SRC_DIR)/rawdisk
 CXXFLAGS += -I $(SRC_DIR)/probing
 CXXFLAGS += -I $(SRC_DIR)/exception
 CXXFLAGS += -m$(ARCH)
+CXXFLAGS += -fPIC
 
 SUFFIX = $(ARCH)
 

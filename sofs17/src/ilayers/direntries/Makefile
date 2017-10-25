@@ -19,6 +19,7 @@ CXXFLAGS += -I "$(SRC_DIR)/ilayers/freelists"
 CXXFLAGS += -I "$(SRC_DIR)/ilayers/inodeattr"
 CXXFLAGS += -I "$(SRC_DIR)/ilayers/fileclusters"
 CXXFLAGS += -m$(ARCH)
+CXXFLAGS += -fPIC
 
 SUFFIX = $(ARCH)
 
