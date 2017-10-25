@@ -12,7 +12,6 @@
 #include "sbdealer.h"
 #include "itdealer.h"
 
-//#include <iostream> //remover depois de teste------------------------------
 
 #include <errno.h>
 #include <inttypes.h>
@@ -24,17 +23,13 @@
  * - error ENOSPC should be thrown if there is no free inodes
  * - the allocated inode must be properly initialized
  */
-//using namespace std;//remover depois de teste---------------------------------------
+
 uint32_t soAllocInode(uint32_t type)
 {
-	bool original = false;
-	
-    if(original){
-	
-        soProbe(502, "soAllocInode(%"PRIu32", %p)\n", type);
-    	return soAllocInodeBin(type);
-    }
-    else{
+
+    //soProbe(502, "soAllocInode(%"PRIu32", %p)\n", type);
+	//return soAllocInodeBin(type);
+
 	
 	//type the inode type (it must represent either a file 0100000, or a directory 0040000, or a symbolic link 0120000)
 
@@ -120,5 +115,5 @@ uint32_t soAllocInode(uint32_t type)
 
     return inodeNumber;
 
-	}
+	
 }
