@@ -1,7 +1,7 @@
 /**
- *  \file blockviews.h
+ *  \file 
  *
- *  \brief Display the contents of a block as:
+ *  \brief Display the contents of a block 
  *
  *      \li hexadecimal data
  *      \li ascii data

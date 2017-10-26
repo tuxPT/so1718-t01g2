@@ -1,6 +1,4 @@
 /**
- *  \file rawdisk.h
- *
  * \defgroup rawlevel rawlevel
  *
  * \brief Manipulation of the disk at block level
@@ -28,8 +26,10 @@
 
 /* ***************************************** */
 
-/** \brief block size (in bytes) */
-#define BlockSize (512U)
+/** \brief block size (in bytes) 
+ * \ingroup constants
+ */
+#define BlockSize 512U
 
 /* ***************************************** */
 

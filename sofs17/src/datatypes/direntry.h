@@ -9,7 +9,9 @@
 #ifndef __SOFS17_DIRENTRY__
 #define __SOFS17_DIRENTRY__
 
-/** \brief maximum length of a file name (in characters) */
+/** 
+ * \brief maximum length of a file name (in characters)
+ */
 #define SOFS17_MAX_NAME 59
 
 /** \brief Definition of the directory entry data type. */

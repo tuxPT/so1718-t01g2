@@ -28,6 +28,7 @@
 #include "itdealer.h"
 #include "freelists.h"
 #include "fileclusters.h"
+#include "inodeattr.h"
 #include "direntries.h"
 #include "blockviews.h"
 
@@ -257,7 +258,7 @@ static void formatDisk(void)
     }
 
     /* wait for ENTER */
-    promptMsg("Press ENTER to continue");
+    promptMsg("\nPress ENTER to continue");
     fscanf(fin, "%*[^\n]");
     fPurge(fin);
 }
@@ -290,7 +291,7 @@ static void showBlock(void)
     system(cmd);
 
     /* wait for ENTER */
-    promptMsg("Press ENTER to continue");
+    promptMsg("\nPress ENTER to continue");
     fscanf(fin, "%*[^\n]");
     fPurge(fin);
 }
@@ -510,7 +511,7 @@ static void readFileCluster(void)
         printBlockAsHex(buf + BlockSize * i, BlockSize * i);
 
     /* wait for ENTER */
-    promptMsg("Press ENTER to continue");
+    promptMsg("\nPress ENTER to continue");
     fscanf(fin, "%*[^\n]");
     fPurge(fin);
 }
@@ -672,8 +673,8 @@ static void deleteDirEntry()
     promptMsg("Clean entry (y/N): ");
     char answer[100];
     fscanf(fin, "%[^\n]", answer);
-fprintf(stderr, "-------------------- %s\n", answer);
-    bool clean = strcasecmp(name, "y") || strcasecmp(name, "yes");
+    bool clean = (strcasecmp(answer, "y") == 0) || (strcasecmp(answer, "yes") == 0);
+
     fPurge(fin);
 
     /* open parent inode */
@@ -713,8 +714,6 @@ void traversePath()
 /* get inode permissions */
 void setInodeAccess()
 {
-notImplemented();
-#if 0
     /* ask for inode number */
     promptMsg("inode number: ");
     uint32_t in;
@@ -738,15 +737,12 @@ notImplemented();
     /* save and close inode */
     iSave(ih);
     iClose(ih);
-#endif
 }
 
 /* ******************************************** */
 /* check inode permissions */
 void checkInodeAccess()
 {
-notImplemented();
-#if 0
     /* ask for inode number */
     promptMsg("inode number: ");
     uint32_t in;
@@ -766,15 +762,12 @@ notImplemented();
 
     /* print result */
     resultMsg("access %0s\n", granted ? "granted" : "denied");
-#endif
 }
 
 /* ******************************************** */
 /* dec inode refcount */
 void decInodeLnkcnt()
 {
-notImplemented();
-#if 0
     /* ask for inode number */
     promptMsg("inode number: ");
     uint32_t in;
@@ -788,16 +781,13 @@ notImplemented();
     iClose(ih);
 
     /* print result */
-    resultMsg("refcount = %hu\n", rc);
-#endif
+    resultMsg("link count = %hu\n", rc);
 }
 
 /* ******************************************** */
 /* inc inode refcount */
 void incInodeLnkcnt()
 {
-notImplemented();
-#if 0
     /* ask for inode number */
     promptMsg("inode number: ");
     uint32_t in;
@@ -811,8 +801,7 @@ notImplemented();
     iClose(ih);
 
     /* print result */
-    resultMsg("refcount = %hu\n", rc);
-#endif
+    resultMsg("link count = %hu\n", rc);
 }
 
 /* ******************************************** */
@@ -923,6 +912,7 @@ public:
 /* The main function */
 int main(int argc, char *argv[])
 {
+    int exit_result = EXIT_SUCCESS; // last command result
     progName = basename(argv[0]);   // must be called before dirname!
     progDir = dirname(argv[0]);
 
@@ -1006,10 +996,12 @@ int main(int argc, char *argv[])
         try
         {
             handler.exec(opt);
+            exit_result = EXIT_SUCCESS;
         }
         catch(SOException & err)
         {
             errnoMsg(err.en, err.msg);
+            exit_result = EXIT_FAILURE;
         }
     }
 
@@ -1021,9 +1013,10 @@ int main(int argc, char *argv[])
     catch(SOException & err)
     {
         errnoMsg(err.en, err.msg);
+        exit_result = EXIT_FAILURE;
     }
 
     /* that's all */
     promptMsg("Bye!\n");
-    return EXIT_SUCCESS;
+    return exit_result;
 }                /* end of main */

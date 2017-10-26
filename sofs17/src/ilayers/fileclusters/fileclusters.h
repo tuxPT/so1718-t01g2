@@ -1,6 +1,4 @@
 /** 
- *  \file fileclusters.h
- *
  * \addtogroup ilayers
  *
  * @{

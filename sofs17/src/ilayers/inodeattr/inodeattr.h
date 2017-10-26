@@ -1,6 +1,4 @@
 /**
- *  \file inodeattr.h
- *
  * \addtogroup ilayers
  *
  * @{
@@ -72,6 +70,8 @@ uint16_t iGetAccess(int ih);
 
 /**
  * \brief check an open inode against a requested access
+ * \details access is a bitwise OR of one or more of R_OK, W_OK, and X_OK
+ * \sa man 2 access
  * \param ih inode handler
  * \param access requested access
  * \return true, for access granted; false for access denied

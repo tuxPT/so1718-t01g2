@@ -1,4 +1,5 @@
 /**
+ *  \file
  *  \brief Some global constants
  *
  *  \author Artur Pereira - 2016-2017
@@ -13,13 +14,18 @@
 #include "refblock.h"
 #include "direntry.h"
 
-/** \brief number inodes per block */
+/** \addtogroup constants constants 
+ * \brief Some useful constants
+ */
+/** \{ */
+
+/** \brief number of inodes per block */
 #define InodesPerBlock (BlockSize / sizeof(SOInode))
 
-/** \brief number references per block */
+/** \brief number of references per block */
 #define ReferencesPerBlock (BlockSize / sizeof (uint32_t))
 
-/** \brief number references per cluster */
+/** \brief number of references per cluster */
 #define ReferencesPerCluster (ClusterSize / sizeof (uint32_t))
 
 /** \brief number of references per free cluster table (bitmap) block */
@@ -28,14 +34,16 @@
 /** \brief number of blocks per cluster */
 #define BlocksPerCluster 4
 
-/** \brief cluster size in bytes */
+/** \brief number of bytes per cluster */
 #define ClusterSize (BlocksPerCluster * BlockSize)
 
 /** \brief number of direntries per cluster */
 #define DirentriesPerCluster     (ClusterSize / sizeof(SODirEntry))
 
-/** \brief undefined reference */
-#define NullReference 0xffffffff
+/** \brief null reference */
+#define NullReference 0xFFFFFFFF
+
+/** \} */
 
 #endif				/* __SOFS17_DATATYPES__ */
 

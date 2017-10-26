@@ -1,6 +1,4 @@
 /**
- *  \file czdealer.h
- *
  *  \addtogroup dealers
  *
  *  @{
