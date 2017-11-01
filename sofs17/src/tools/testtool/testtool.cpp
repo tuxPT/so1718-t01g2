@@ -259,6 +259,7 @@ static void formatDisk(void)
 
     /* wait for ENTER */
     promptMsg("\nPress ENTER to continue");
+    if (quiet > 0) return;
     fscanf(fin, "%*[^\n]");
     fPurge(fin);
 }
@@ -292,6 +293,7 @@ static void showBlock(void)
 
     /* wait for ENTER */
     promptMsg("\nPress ENTER to continue");
+    if (quiet > 0) return;
     fscanf(fin, "%*[^\n]");
     fPurge(fin);
 }
@@ -512,6 +514,7 @@ static void readFileCluster(void)
 
     /* wait for ENTER */
     promptMsg("\nPress ENTER to continue");
+    if (quiet > 0) return;
     fscanf(fin, "%*[^\n]");
     fPurge(fin);
 }
@@ -844,8 +847,10 @@ public:
         hdl["spd"] = setProbeDepths;
         hdl["cia"] = checkInodeAccess;
         hdl["sia"] = setInodeAccess;
-        hdl["iic"] = incInodeLnkcnt;
-        hdl["dic"] = decInodeLnkcnt;
+        hdl["iil"] = incInodeLnkcnt;
+        hdl["dil"] = decInodeLnkcnt;
+        hdl["iilc"] = incInodeLnkcnt;
+        hdl["dilc"] = decInodeLnkcnt;
     }
 
     void exec(std::string & key)
