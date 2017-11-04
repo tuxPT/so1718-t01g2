@@ -17,31 +17,26 @@ void fillInFreeClusterTable(uint32_t rmstart, uint32_t ctotal)
 	}
 	else
 	{
-		uint32_t rpc = (ReferencesPerBlock*BlocksPerCluster)-1;
-
-		uint32_t clusterTable[rpc+1];
-
-		uint32_t cfree = ctotal-1;
-
-		uint32_t ccluster = rmstart+1;
-
-		uint32_t ncluster = cfree;
-
-		for(uint32_t i =1; i<=ctotal; i+=1)
+		uint32_t blocos = ctotal / (8*ReferencesPerBitmapBlock);
+		SORefBlock refTable = new SORefBlock();
+		ref->cnt = (8*ReferenceBytesPerBitmapBlock)-1;
+		ref->idx = 0;
+		for(uint32_t count = 0; count<=blocos; count+=1)
 		{
-			clusterTable = new(clusterTable) uint32_t[rpc+1]();
-			for(uint32_t j = 0; j<rpc ; j+=1)
+			for(uint32_t i =0; i<=ReferencesPerBitmapBlock; i+=1)
 			{
-				clusterTable[j] = ncluster ? ccluster++ : NullReference;
-				ncluster -= ncluster ? 1 : 0;
+				refTable->map[i]=0xFF;
+
 			}
 
-			clusterTable[rpc]= ncluster ? (i+1) : NullReference;
+			if(count==0)
+			{
+				refTable->map[0]=0x7F;
+			}
+			soWriteRawBlock(rmstart,refTable);
 
-			soWriteRawBlock(i*BlocksPerCluster+rmstart, clusterTable);
-
+			rmstart+=BlockSize;
 		}
-
 	}
    
 }
