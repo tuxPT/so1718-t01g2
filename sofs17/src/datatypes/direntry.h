@@ -9,6 +9,8 @@
 #ifndef __SOFS17_DIRENTRY__
 #define __SOFS17_DIRENTRY__
 
+#include <inttypes.h>
+
 /** 
  * \brief maximum length of a file name (in characters)
  */

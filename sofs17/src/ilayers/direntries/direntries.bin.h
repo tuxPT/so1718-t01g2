@@ -100,6 +100,17 @@ uint32_t soDeleteDirEntryBin(int pih, const char *name, bool clean = false);
 void soRenameDirEntryBin(int pih, const char *name, const char *newName);
 
 /* ************************************************** */
+
+/*
+ *  \brief Check directory emptiness
+ *
+ *  The directory is traversed to verified if the only entries are "." and "..".
+ *
+ *  \param ih inode handler of the parent inode
+ */
+void soCheckEmptinessBin(int ih);
+
+/* ************************************************** */
 /* @} */
 /* ************************************************** */
 

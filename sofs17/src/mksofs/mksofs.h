@@ -19,6 +19,8 @@
 
 #include "datatypes.h"
 
+#include <inttypes.h>
+
 /**
  * \brief computes the structural division of the disk
  * \details The structural division is computed, possible adjusting the number of 

@@ -11,6 +11,8 @@
 
 #include "datatypes.h"
 
+#include <inttypes.h>
+
 void computeStructureBin(uint32_t ntotal, uint32_t itotal,
             uint32_t * itsizep, uint32_t * rmsizep, uint32_t * ctotalp);
 

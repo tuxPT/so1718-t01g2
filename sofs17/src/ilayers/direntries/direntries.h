@@ -102,6 +102,15 @@ uint32_t soDeleteDirEntry(int pih, const char *name, bool clean = false);
  */
 void soRenameDirEntry(int pih, const char *name, const char *newName);
 
+/**
+ *  \brief Check directory emptiness
+ *
+ *  The directory is traversed to verified if the only entries are "." and "..".
+ *
+ *  \param ih inode handler of the parent inode
+ */
+void soCheckEmptiness(int ih);
+
 /* ************************************************** */
 /** @} closing group direntries */
 /** @} closing group ilayers */

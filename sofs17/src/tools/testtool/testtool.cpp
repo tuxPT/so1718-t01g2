@@ -743,6 +743,37 @@ void setInodeAccess()
 }
 
 /* ******************************************** */
+/* change the owner and group of an inode */
+void changeOwnership()
+{
+    /* ask for inode number */
+    promptMsg("inode number: ");
+    uint32_t in;
+    fscanf(fin, "%u", &in);
+    fPurge(fin);
+
+    /* ask for owner id */
+    promptMsg("owner id: ");
+    uint32_t own_id;
+    fscanf(fin, "%u", &own_id);
+    fPurge(fin);
+
+    /* ask for group id */
+    promptMsg("group id: ");
+    uint32_t grp_id;
+    fscanf(fin, "%u", &grp_id);
+    fPurge(fin);
+
+    /* change ownership */
+    int ih = iOpen(in);
+    SOInode * ip = iGetPointer(ih);
+    ip->owner = own_id;
+    ip->group = grp_id;
+    iSave(ih);
+    iClose(ih);
+}
+
+/* ******************************************** */
 /* check inode permissions */
 void checkInodeAccess()
 {
@@ -851,6 +882,7 @@ public:
         hdl["dil"] = decInodeLnkcnt;
         hdl["iilc"] = incInodeLnkcnt;
         hdl["dilc"] = decInodeLnkcnt;
+        hdl["cog"] = changeOwnership;
     }
 
     void exec(std::string & key)
@@ -901,6 +933,7 @@ public:
              "+--------------------------------+-------------------------------+\n"
              "+ cia - check inode access       | sia - set inode access        +\n"
              "+ iil - increment inode lnkcnt   | dil - decrement inode lnkcnt  +\n"
+             "+ cog - change owner and group   |                               +\n"
              "+================================================================+\n");
     }
 
