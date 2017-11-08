@@ -38,13 +38,11 @@ void fillInInodeTable(uint32_t itstart, uint32_t itsize)
 
     
     inodeTable[0].clucnt = ceil(float(sizeof(SODirEntry))/float(ClusterSize));//Nc = tamanho do ficheiro em bytes  / tamanha de um cluster em bytes
-    inodeTable[0].size = inodeTable[0].clucnt*4*BlockSize; 
+    inodeTable[0].size = inodeTable[0].clucnt*BlocksPerCluster*BlockSize; 
     
 
 
-    inodeTable[0].ctime = time(NULL);
-    inodeTable[0].mtime = time(NULL);
-    inodeTable[0].atime = time(NULL);
+    inodeTable[0].ctime = inodeTable[0].mtime = inodeTable[0].atime = time(NULL);
 
     inodeTable[0].d[0] = 0; // primeiro data cluster
 

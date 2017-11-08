@@ -61,9 +61,7 @@ uint32_t soAllocInode(uint32_t type)
 
     inode->owner = getuid();
     inode->group = getgid();
-    inode->atime = time(NULL);
-    inode->mtime = time(NULL);
-    inode->ctime = time(NULL);
+    inode->atime = inode->mtime = inode->ctime = time(NULL);
 
     iSave(ih1);
     iClose(ih1);
