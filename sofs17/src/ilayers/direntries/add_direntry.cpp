@@ -73,9 +73,12 @@ void soAddDirEntry(int pih, const char *name, uint32_t cin)
                 if(cluster2read != NullReference) soReadCluster(cluster2read, entries2read);
             }
         }
-        if(cluster2read == NullReference && first_nullref != NullReference)
+        if(cluster2read == NullReference)
         {
-            first_nullref = i;
+            if(first_nullref == NullReference)
+            {
+                first_nullref = i;
+            }
             i++;
             continue;
         }
