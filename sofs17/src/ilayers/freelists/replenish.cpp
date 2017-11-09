@@ -26,7 +26,7 @@
  */
 void soReplenish(void)
 {
-//#define __original__
+#define __original__
     soProbe(542, "soReplenish()\n");
 #ifdef __original__
     soReplenishBin();
@@ -68,6 +68,7 @@ void soReplenish(void)
                     sb->rcache.ref[i] = (index * 8) + counter;
                     i++;
                     byte = byte & ~mask;
+                    refblock->cnt--;
                 }
             }
             refblock->map[index] = byte;
