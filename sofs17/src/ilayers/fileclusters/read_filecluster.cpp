@@ -15,6 +15,9 @@
 void soReadFileCluster(int ih, uint32_t fcn, void *buf)
 {
     soProbe(404, "soReadFileCluster(%d, %u, %p)\n", ih, fcn, buf);
+    #ifdef __original__
+    soReadFileClusterBin(ih,fcb,*buf);
+    #else
     //cluster number
     uint32_t cn;
     //obter o cluster number do file cluster number passado como argumento
