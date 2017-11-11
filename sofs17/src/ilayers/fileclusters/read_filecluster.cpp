@@ -8,6 +8,8 @@
 
 #include "probing.h"
 #include "exception.h"
+#include "datatypes.h"
+#include "czdealer.h"
 
 #include <errno.h>
 #include <inttypes.h>
@@ -24,7 +26,11 @@ void soReadFileCluster(int ih, uint32_t fcn, void *buf)
     cn=soGetFileCluster(ih,fcn);
 
     //se o cluster estiver vazio a funcao alloc irá associar o cn ao fcn dado(provavelmente alloc errado)
-    if(cn == NULL_REFERENCE) memset(buf,'\0',ClusterSize);;
+    if(cn == NullReference)
+    {
+     	memset(buf,'\0',ClusterSize);
+ 	}
 
     soReadCluster(cn,buf);
+    #endif
 }
