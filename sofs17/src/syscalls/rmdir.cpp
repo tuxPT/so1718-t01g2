@@ -10,6 +10,8 @@
 #include "itdealer.h"
 #include "inodeattr.h"
 #include "direntries.h"
+#include "freelists.h"
+#include "fileclusters.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -50,7 +52,7 @@ int soRmdir(const char *path)
 
 
 
-
+    char *Path = strdupa(path);                                 // path do diretorio
     char *dirPath = dirname(strdupa(path));                     // path do até ao diretorio (exclusive)
     char *dir = basename(strdupa(path));                        // nome do diretorio
 
@@ -59,7 +61,7 @@ int soRmdir(const char *path)
 
         // Ver se o caminho existe
  
-        uint32_t cin = soTraversePath(path);                        
+        uint32_t cin = soTraversePath(Path);                        
 
 
         //Existe?
@@ -85,17 +87,17 @@ int soRmdir(const char *path)
 
 
         uint16_t permissions = R_OK | W_OK | X_OK;
-
+        bool checkPerm = iCheckAccess(cih,permissions);
 
         // verifica se tem permissoes necessarias
-        if(!iCheckAccess(cih,permissions))                               
+        if(!checkPerm)                               
         {
             iClose(cih);
             throw SOException(EACCES,__FUNCTION__);                    
         }               
  
         // ver se diretorio esta vazio
-        if(inode->lnkcnt != 2 || !soCheckEmptiness(cih))
+        if(inode->lnkcnt != 2 || !checkPerm)
         {        
             iClose(cih);
             throw SOException(ENOTEMPTY,__FUNCTION__);              
@@ -109,7 +111,7 @@ int soRmdir(const char *path)
         uint32_t pin = soTraversePath(dirPath);
 
         // inode pai  
-        pih = iOpen(pin);                                              
+        int pih = iOpen(pin);                                              
 
         
         //Liberta todos os clusters do diretorio que vamos apagar
@@ -124,7 +126,7 @@ int soRmdir(const char *path)
         //libertar Inode
         soFreeInode(cin);
         //resetar permissoes
-        cin->mode = cin->mode && 0770000; 
+        inode->mode = inode->mode && 0770000; 
   
 
 
