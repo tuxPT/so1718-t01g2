@@ -20,6 +20,7 @@
 #include <stdint.h>
 #include <unistd.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <cmath>
 //#if 0
 static void soAllocIndirectFileCluster(uint32_t *i1,SOInode * ip, uint32_t fcn, uint32_t * cnp);
@@ -30,11 +31,12 @@ static void soAllocDoubleIndirectFileCluster(SOInode * ip, uint32_t fcn, uint32_
 
 uint32_t soAllocFileCluster(int ih, uint32_t fcn)
 {
+	//#define __original__
+    #ifdef __original__
+    	soProbe(401, "soAllocFileCluster(%d, %u)\n", ih, fcn);
+		return soAllocFileClusterBin(ih, fcn);
+	#else
 	
-    //soProbe(401, "soAllocFileCluster(%d, %u)\n", ih, fcn);
-	//return soAllocFileClusterBin(ih, fcn);
-	
-	//Não é preciso abrir nem fechar inode?
 
 	iCheckHandler(ih,__FUNCTION__);
 	SOInode* inode = iGetPointer(ih);
@@ -42,8 +44,8 @@ uint32_t soAllocFileCluster(int ih, uint32_t fcn)
 	
 	
 	if(fcn<N_DIRECT){
-		inode->clucnt++;
 		clusterNumber = soAllocCluster();
+		inode->clucnt++;
 		inode->d[fcn]=clusterNumber;
 	}
 	else if(fcn-N_DIRECT<ReferencesPerCluster){
@@ -53,10 +55,10 @@ uint32_t soAllocFileCluster(int ih, uint32_t fcn)
 
 		soAllocDoubleIndirectFileCluster(inode, fcn-N_DIRECT-ReferencesPerCluster, &clusterNumber);
 	}
-
+	inode->ctime = inode->mtime = inode->atime = time(NULL);
 	iSave(ih);
 	return clusterNumber;
-    
+    #endif
 }
 
 //#if 0
@@ -76,8 +78,8 @@ static void soAllocIndirectFileCluster(uint32_t *i1, SOInode * ip, uint32_t afcn
 		SOSuperBlock* sb = sbGetPointer();			// Ponteiro para superblock
 		
 		if(sb->cfree>2){							// Verficar se existem pelo menos 2 inodes livre pq vai ser preciso allocar 1 extra para referencias
-			ip->clucnt++;						// incrementar o nr de clusters usados do inode
 			*i1=soAllocCluster();
+			ip->clucnt++;							// incrementar o nr de clusters usados do inode
 		}
 		else{
 
@@ -86,9 +88,10 @@ static void soAllocIndirectFileCluster(uint32_t *i1, SOInode * ip, uint32_t afcn
 	}
 
 	soReadCluster(*i1,&cluster);					//ler as referencias do cluster i1
-	ip->clucnt++;	
+	
 	*cnp=soAllocCluster();							//guardar o nº de cluster					
-
+	ip->clucnt++;
+	
 	cluster[afcn]=*cnp;				
 
 	soWriteCluster(*i1,&cluster);				//guardar as referencias 

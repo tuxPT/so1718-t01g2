@@ -26,9 +26,12 @@
 
 uint32_t soAllocInode(uint32_t type)
 {
+    //#define __original__
+    #ifdef __original__
+        soProbe(502, "soAllocInode(%"PRIu32", %p)\n", type);
+        return soAllocInodeBin(type);
+    #else
 
-    //soProbe(502, "soAllocInode(%"PRIu32", %p)\n", type);
-	//return soAllocInodeBin(type);
 
 	
 	//type the inode type (it must represent either a file 0100000, or a directory 0040000, or a symbolic link 0120000)
@@ -113,5 +116,6 @@ uint32_t soAllocInode(uint32_t type)
 
     return inodeNumber;
 
+    #endif
 	
 }

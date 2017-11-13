@@ -15,12 +15,17 @@
 #include <math.h>
 #include <unistd.h>
 #include <sys/types.h>
+#include <sys/stat.h>
+
 
 /* see mksofs.h for a description */
 void fillInInodeTable(uint32_t itstart, uint32_t itsize)
 {
-	
-    //fillInInodeTableBin(itstart, itsize);
+	//#define __original__
+
+    #ifdef __original__
+        fillInInodeTableBin(itstart, itsize);
+    #else
     unsigned int i,j,k=2;
 
     uint32_t ittl=ceil(itsize*InodesPerBlock); //nº total inodes
@@ -31,7 +36,7 @@ void fillInInodeTable(uint32_t itstart, uint32_t itsize)
 
     //creation of (root directory) = inode 0:
     
-    inodeTable[0].mode = 0040000 | 0700 | 070 | 05; // 
+    inodeTable[0].mode = S_IFDIR | S_IRWXU | S_IRWXG | 05; // 05 -> others have execute and read
     inodeTable[0].lnkcnt = 2;
     inodeTable[0].owner = getuid();
     inodeTable[0].group = getgid();
@@ -103,4 +108,5 @@ void fillInInodeTable(uint32_t itstart, uint32_t itsize)
 		}
         soWriteRawBlock(itstart+j, &inodeTable);
     }
+    #endif
 }

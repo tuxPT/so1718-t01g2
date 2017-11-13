@@ -1,9 +1,15 @@
 /*
- * \author ...
+ *  \author João Paulo Alpendre Aniceto 72255
+ *  \tester João Paulo Alpendre Aniceto 72255
  */
 
 #include "syscalls.h"
 #include "syscalls.bin.h"
+
+#include "czdealer.h"
+#include "itdealer.h"
+#include "inodeattr.h"
+#include "direntries.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -37,12 +43,100 @@
  */
 int soRmdir(const char *path)
 {
-    soProbe(233, "soRmdir(\"%s\")\n", path);
+    //#define __original__
+    #ifdef __original__
+        soProbe(233, "soRmdir(\"%s\")\n", path);
+    #else
+
+
+
+
+    char *dirPath = dirname(strdupa(path));                     // path do até ao diretorio (exclusive)
+    char *dir = basename(strdupa(path));                        // nome do diretorio
 
     try
     {
-        /* replace next line with your code */
-        soRmdirBin(path);
+
+        // Ver se o caminho existe
+ 
+        uint32_t cin = soTraversePath(path);                        
+
+
+        //Existe?
+        if(cin == NullReference){                                     
+            throw SOException(ENOENT,__FUNCTION__);                                              
+        } 
+    
+        
+
+        // Se existe, abre inode
+ 
+        int cih = iOpen(cin);                                                                
+        SOInode* inode = iGetPointer(cih);
+  
+        
+        // verifica se é diretorio
+        if((inode->mode && S_IFDIR) == 0)                                
+        {
+            iClose(cih);
+            throw SOException(ENOTDIR,__FUNCTION__);                    
+        }        
+
+
+
+        uint16_t permissions = R_OK | W_OK | X_OK;
+
+
+        // verifica se tem permissoes necessarias
+        if(!iCheckAccess(cih,permissions))                               
+        {
+            iClose(cih);
+            throw SOException(EACCES,__FUNCTION__);                    
+        }               
+ 
+        // ver se diretorio esta vazio
+        if(inode->lnkcnt != 2 || !soCheckEmptiness(cih))
+        {        
+            iClose(cih);
+            throw SOException(ENOTEMPTY,__FUNCTION__);              
+        }
+  
+        
+ 
+        // Finalmente, remover diretorio
+  
+        // Diretorio pai
+        uint32_t pin = soTraversePath(dirPath);
+
+        // inode pai  
+        pih = iOpen(pin);                                              
+
+        
+        //Liberta todos os clusters do diretorio que vamos apagar
+        soFreeFileClusters(cih,0);                                      
+
+        //remove o direntry, do diretorio que vamos remover, do inode pai 
+        soDeleteDirEntry(pih, dir, true);                
+  
+        iDecLnkcnt(pih);
+
+
+        //libertar Inode
+        soFreeInode(cin);
+        //resetar permissoes
+        cin->mode = cin->mode && 0770000; 
+  
+
+
+        iSave(cih);
+        iSave(pih);
+  
+                
+  
+        iClose(cih);
+        iClose(pih);
+  
+        
     }
     catch(SOException & err)
     {
@@ -50,4 +144,6 @@ int soRmdir(const char *path)
     }
 
     return 0;
+
+    #endif
 }
