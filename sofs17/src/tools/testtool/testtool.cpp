@@ -567,6 +567,7 @@ static void getDirEntry()
     /* ask for direntry name */
     promptMsg("Direntry name: ");
     char name[100];
+    name[0] = '\0';
     fscanf(fin, "%[^\n]", name);
     fPurge(fin);
 
@@ -597,6 +598,7 @@ static void addDirEntry()
     /* ask for direntry name */
     promptMsg("Direntry name: ");
     char name[100];
+    name[0] = '\0';
     fscanf(fin, "%[^\n]", name);
     fPurge(fin);
 
@@ -633,12 +635,14 @@ static void renameDirEntry()
     /* ask for direntry name */
     promptMsg("Direntry name: ");
     char name[100];
+    name[0] = '\0';
     fscanf(fin, "%[^\n]", name);
     fPurge(fin);
 
     /* ask for new direntry name */
     promptMsg("New direntry name: ");
     char newname[100];
+    newname[0] = '\0';
     fscanf(fin, "%[^\n]", newname);
     fPurge(fin);
 
@@ -669,12 +673,14 @@ static void deleteDirEntry()
     /* ask for direntry name */
     promptMsg("Direntry name: ");
     char name[100];
+    name[0] = '\0';
     fscanf(fin, "%[^\n]", name);
     fPurge(fin);
 
     /* ask for clean or non clean deletion */
     promptMsg("Clean entry (y/N): ");
     char answer[100];
+    answer[0] = '\0';
     fscanf(fin, "%[^\n]", answer);
     bool clean = (strcasecmp(answer, "y") == 0) || (strcasecmp(answer, "yes") == 0);
 
@@ -702,6 +708,7 @@ void traversePath()
     /* ask for PATH */
     promptMsg("path: ");
     char path[500];
+    path[0] = '\0';
     fscanf(fin, "%[^\n]", path);
     fPurge(fin);
 
