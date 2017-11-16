@@ -6,6 +6,7 @@
 #include "czdealer.h"
 #include "itdealer.h"
 #include "fileclusters.h"
+#include "fileclusters.bin.h"
 #include "direntries.h"
 #include "direntries.bin.h"
 
@@ -15,6 +16,10 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <errno.h>
+
+#include <iostream>
+using namespace std;
+
 
 uint32_t soDeleteDirEntry(int pih, const char *name, bool clean)
 {
@@ -33,8 +38,6 @@ uint32_t soDeleteDirEntry(int pih, const char *name, bool clean)
 		throw SOException(ENOENT,__FUNCTION__);
 	}
 
-    uint32_t IN=soGetDirEntry(pih,name);
-	
     //nome do dirEntry demasiado pequeno ou vazio
     if(name[0]=='\0'||name==NULL){
     	throw SOException(EINVAL,__FUNCTION__);
@@ -45,41 +48,43 @@ uint32_t soDeleteDirEntry(int pih, const char *name, bool clean)
     	throw SOException(ENAMETOOLONG,__FUNCTION__);
     }
 
-    //dirEntry nao existe neste diretorio atual
-	if(IN==NullReference){
-		throw SOException(ENOENT,__FUNCTION__);
-	}
-
-	int cih=iOpen(IN);
-	SOInode* inode=iGetPointer(cih);
-
 
 	SODirEntry DirEntryList[DirentriesPerCluster];
 
 
 	//percorre os clusters com dirEntries
-	for(uint32_t j=0;j<inode->size/ClusterSize;j++){
-		soReadFileCluster( cih, j, DirEntryList);
+	for(uint32_t j=0;j<Pinode->size/ClusterSize;j++){
+
+		//soReadFileClusterBin( pih, j, DirEntryList);
+		soReadFileCluster( pih, j, DirEntryList);
+
 
 		//percorre as direntries de cada cluster
 		for(uint32_t i=0;i<DirentriesPerCluster;i++){
-			if(DirEntryList[i].name==name){
+			if(strcmp(DirEntryList[i].name,name)==0){
+				uint32_t IN = DirEntryList[i].in;
 				if(clean){
 					memset(DirEntryList[i].name,'\0',SOFS17_MAX_NAME);
+					DirEntryList[i].in=NullReference;
+
 				}
 				else{
-					DirEntryList[i].name[sizeof(DirEntryList[i].name)] = DirEntryList[i].name[0];
+					DirEntryList[i].name[SOFS17_MAX_NAME] = DirEntryList[i].name[0];
 					DirEntryList[i].name[0]='\0';
 				}
-				uint32_t cn = soGetFileCluster(cih,j);
-				soWriteCluster(cn,DirEntryList);
-				iSave(cih);
-				iClose(cih);
+
+
+				//oWriteFileClusterBin(pih,j,DirEntryList);
+				soWriteFileCluster(pih,j,DirEntryList);
+
 				return IN;
 			}
 		}
+	
 	}
 
-	return NullReference;
+	//dirEntry nao existe neste diretorio atual
+	throw SOException(ENOENT,__FUNCTION__);
+
     #endif
 }
