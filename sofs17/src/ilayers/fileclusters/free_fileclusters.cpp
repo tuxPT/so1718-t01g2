@@ -93,6 +93,7 @@ void soFreeFileClusters(int ih, uint32_t ffcn)
     // printf("DEBUG: AFTER TOTAL: %d\n", total);
 
     iSave(ih);
+    iClose(ih);
     sbSave();
 }
 

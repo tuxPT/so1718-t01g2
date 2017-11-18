@@ -67,7 +67,9 @@ void soFreeInode(uint32_t in)
 
 			// Save inodes
 			iSave(head_handler);
+			iClose(head_handler);
 			iSave(node_handler);
+			iClose(node_handler);
 		}
 		else
 		{
@@ -95,7 +97,9 @@ void soFreeInode(uint32_t in)
 			// TAIL <-> HEAD ===> TAIL <-> NEW <-> HEAD
 
 			iSave(head_handler);
+			iClose(head_handler);
 			iSave(tail_handler);
+			iClose(tail_handler);
 		}
 
 		sbp->ifree++;
