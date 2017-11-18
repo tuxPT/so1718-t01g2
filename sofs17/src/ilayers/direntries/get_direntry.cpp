@@ -3,13 +3,23 @@
  *  \tester ...
  */
 
+#include "czdealer.h"
+#include "itdealer.h"
+#include "fileclusters.h"
+#include "fileclusters.bin.h"
 #include "direntries.h"
 #include "direntries.bin.h"
 
 #include "probing.h"
 #include "exception.h"
-
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <errno.h>
+
+#include <iostream>
+using namespace std;
+
 
 uint32_t soGetDirEntry(int pih, const char *name)
 {
@@ -18,7 +28,7 @@ uint32_t soGetDirEntry(int pih, const char *name)
     	 soProbe(351, "soGetDirEntry(%d, %s)\n", pih, name);
    		return soGetDirEntryBin(pih, name);
 	#else
-    SOInode *in = iGetPointer(pih);
+    SOInode *Pinode = iGetPointer(pih);
     
     //inode pai não é diretorio
     if(!(Pinode->mode && S_IFDIR)){
