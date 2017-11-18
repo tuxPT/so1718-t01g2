@@ -10,8 +10,11 @@
 #include "itdealer.h"
 #include "inodeattr.h"
 #include "direntries.h"
+#include "direntries.bin.h"
 #include "freelists.h"
+#include "freelists.bin.h"
 #include "fileclusters.h"
+#include "fileclusters.bin.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -48,6 +51,7 @@ int soRmdir(const char *path)
     //#define __original__
     #ifdef __original__
         soProbe(233, "soRmdir(\"%s\")\n", path);
+        soRmdirBin(path);
     #else
 
 
@@ -60,8 +64,8 @@ int soRmdir(const char *path)
     {
 
         // Ver se o caminho existe
- 
-        uint32_t cin = soTraversePath(Path);                        
+        //uint32_t cin = soTraversePathBin(Path);
+        uint32_t cin = soTraversePath(Path);                         
 
 
         //Existe?
@@ -95,45 +99,46 @@ int soRmdir(const char *path)
             iClose(cih);
             throw SOException(EACCES,__FUNCTION__);                    
         }               
- 
-        // ver se diretorio esta vazio
-        if(inode->lnkcnt != 2 || !checkPerm)
-        {        
-            iClose(cih);
-            throw SOException(ENOTEMPTY,__FUNCTION__);              
-        }
-  
-        
+
+        //verifica se está vazio
+        soCheckEmptiness(cih); 
  
         // Finalmente, remover diretorio
   
         // Diretorio pai
+        //uint32_t pin = soTraversePathBin(dirPath);
         uint32_t pin = soTraversePath(dirPath);
 
         // inode pai  
         int pih = iOpen(pin);                                              
 
         
-        //Liberta todos os clusters do diretorio que vamos apagar
-        soFreeFileClusters(cih,0);                                      
+                                    
 
         //remove o direntry, do diretorio que vamos remover, do inode pai 
         soDeleteDirEntry(pih, dir, true);                
-  
+        //decrementa o linkcount do inode pai
         iDecLnkcnt(pih);
 
+        //remove o direntry . do diretorio que vamos remover
+        soDeleteDirEntry(cih, ".", false);   
+        //remove o direntry .. do diretorio que vamos remover
+        soDeleteDirEntry(cih, "..", false);   
+        
+        //reseta o linkcount do inode
+        inode->lnkcnt=0;
+    
+        //Liberta todos os clusters do diretorio que vamos apagar
+        //soFreeFileClustersBin(cih,0);
+        soFreeFileClustersBin(cih,0);  
+        
 
         //libertar Inode
-        soFreeInode(cin);
-        //resetar permissoes
-        inode->mode = inode->mode && 0770000; 
-  
-
+        //soFreeInodeBin(cin);
+        soFreeInodeBin(cin);
 
         iSave(cih);
         iSave(pih);
-  
-                
   
         iClose(cih);
         iClose(pih);
