@@ -62,14 +62,7 @@ int soRename(const char *path, const char *newPath)
          // Se existe, abre inode
  
         int cih = iOpen(cin);                                                                
-        SOInode* inode = iGetPointer(cih); 
-
-        // verifica se é diretorio
-        if((inode->mode && S_IFDIR) == 0)                                
-        {
-            iClose(cih);
-            throw SOException(ENOTDIR,__FUNCTION__);                    
-        }        
+        SOInode* inode = iGetPointer(cih);        
 
 
 
@@ -83,12 +76,6 @@ int soRename(const char *path, const char *newPath)
             throw SOException(EACCES,__FUNCTION__);                    
         }               
  
-        // ver se diretorio esta vazio
-        if(inode->lnkcnt != 2 || !checkPerm)
-        {        
-            iClose(cih);
-            throw SOException(ENOTEMPTY,__FUNCTION__);              
-        }
         // Finalmente, renomear
   
         // Diretorio pai
