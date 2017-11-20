@@ -133,6 +133,8 @@ static void soFreeIndirectFileClusters(uint32_t i1, SOInode * ip, uint32_t ffcn,
         }
     }
 
+    free(refs);
+
     // Free own cluster
     soFreeCluster(i1);
     ip->i1 = NullReference;
@@ -166,6 +168,8 @@ static void soFreeDoubleIndirectFileClusters(SOInode * ip, uint32_t ffcn, int * 
             soFreeIndirectFileClusters(c_refs, ip, 0, total); // initial location should be verified
         }
     }
+
+    free(refs);
 
     // Free own cluster
     soFreeCluster(ip->i2);
