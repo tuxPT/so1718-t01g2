@@ -14,5 +14,9 @@
 void soRenameDirEntry(int pih, const char *name, const char *newName)
 {
     soProbe(354, "soRenameDirEntry(%d, %s, %s)\n", pih, name, newName);
-    soRenameDirEntryBin(pih, name, newName);
+    //soRenameDirEntryBin(pih, name, newName);
+	uint32_t cin = soGetDirEntry(pih,name);
+	soDeleteDirEntry(pih,name,true);	
+	soAddDirEntry(pih,newName,cin);
+	
 }

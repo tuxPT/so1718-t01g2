@@ -23,6 +23,13 @@
 #include "probing.h"
 #include "exception.h"
 
+#include "czdealer.h"
+#include "itdealer.h"
+#include "inodeattr.h"
+#include "direntries.h"
+#include "freelists.h"
+#include "fileclusters.h"
+
 /*
  *  \brief Change the name or the location of a file in the directory hierarchy of the file system.
  *
@@ -36,17 +43,62 @@
  */
 int soRename(const char *path, const char *newPath)
 {
+    #ifdef __original__
     soProbe(227, "soRename(\"%s\", \"%s\")\n", path, newPath);
+    #else
 
-    try
-    {
-        /* replace next line with your code */
-        soRenameBin(path, newPath);
-    }
-    catch(SOException & err)
-    {
-        return -err.en;
-    }
+        char *Path = strdupa(path);                                 // path do diretorio
+        char *dirPath = dirname(strdupa(path));                     // path do até ao diretorio (exclusive)
+        char *dir = basename(strdupa(path));                        // nome do diretorio
+        char *dir2=basename(strdupa(newPath));
+        try
+        {
+            uint32_t cin = soTraversePath(Path);
 
-    return 0;
+            if(cin == NullReference){
+                throw SOException(ENOENT, __FUNCTION__);
+            }
+
+         // Se existe, abre inode
+ 
+        int cih = iOpen(cin);                                                                
+        SOInode* inode = iGetPointer(cih);        
+
+
+
+        uint16_t permissions = R_OK | W_OK | X_OK;
+        bool checkPerm = iCheckAccess(cih,permissions);
+
+        // verifica se tem permissoes necessarias
+        if(!checkPerm)                               
+        {
+            iClose(cih);
+            throw SOException(EACCES,__FUNCTION__);                    
+        }               
+ 
+        // Finalmente, renomear
+  
+        // Diretorio pai
+        uint32_t pin = soTraversePath(dirPath);
+
+        // inode pai  
+        int pih = iOpen(pin);  
+
+        soRenameDirEntry(pih, dir, dir2);
+
+        iSave(cih);
+        iSave(pih);
+
+        iClose(cih);
+        iClose(pih);
+
+
+        }
+        catch(SOException & err)
+        {
+            return -err.en;
+        }
+
+        return 0;
+    #endif
 }
