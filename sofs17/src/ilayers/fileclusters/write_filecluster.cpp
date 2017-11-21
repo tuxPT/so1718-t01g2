@@ -1,6 +1,6 @@
 /**
- *  \author ...
- *  \tester ...
+ *  \author Ricardo Ferreira Martins, 72286
+ *  \tester Ricardo Ferreira Martins, 72286
  */
 
 #include "fileclusters.h"

@@ -1,3 +1,11 @@
+/**
+ *  \Author Ricardo Ferreira Martins, 72286
+ *  \tester Ricardo Ferreira Martins, 72286
+ */
+
+
+
+
 #include "mksofs.h"
 #include "mksofs.bin.h"
 

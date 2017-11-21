@@ -1,15 +1,14 @@
 /**
- *  \author ...
- *  \tester ...
+ *  \Author Ricardo Ferreira Martins, 72286
+ *  \tester Ricardo Ferreira Martins, 72286
  */
 
 #include "freelists.h"
 #include "freelists.bin.h"
-
+#include "datatypes.h"
 #include "probing.h"
 #include "exception.h"
 #include "sbdealer.h"
-
 #include <errno.h>
 #include <inttypes.h>
 #include <assert.h>
@@ -21,15 +20,22 @@
  */
 void soFreeCluster(uint32_t cn)
 {
-    soProbe(531, "soFreeCluster(%"PRIu32")\n", cn);
+    
+soProbe(531, "soFreeCluster(%"PRIu32")\n", cn);
     //soFreeClusterBin(cn);
-
-    soOpenSBDealer();
     SOSuperBlock *sb=sbGetPointer();
-    assert(cn<sb->ctotal);
+    if(cn<sb->ctotal){
+       throw SOException(EINVAL,__FUNCTION__); 
+    }
+   
+    if(sb->icache.idx==NullReference){
+       deplete();
+       sb->icache.idx=0;
+    }
     sb->cfree++;
     sb->icache.ref[sb->icache.idx]=cn;
-    sb->icache.idx++;
+    if(sb->icache.idx+1==REFERENCE_CACHE_SIZE)sb->icache.idx=NullReference;
+    else sb->icache.idx++;
     sbSave();
 
 }
