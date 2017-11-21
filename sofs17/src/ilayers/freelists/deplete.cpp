@@ -1,5 +1,5 @@
 /**
- *  \author ...
+ *  \author Ariel António da Silva Bastos, 72204
  *  \tester ...
  */
 

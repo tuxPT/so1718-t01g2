@@ -1,8 +1,7 @@
 /**
- *  \author ...
+ *  \author Ariel António da Silva Bastos, 72204
  *  \tester ...
  */
-
 #include "fileclusters.h"
 #include "fileclusters.bin.h"
 

@@ -1,3 +1,7 @@
+/**
+ *  \author Ariel Antonio Da Silva Bastos , 72204
+
+**/
 #include "mksofs.h"
 #include "mksofs.bin.h"
 
