@@ -1,10 +1,10 @@
 /*
- * \author ...
+ * \author Ricardo Ferreira Martins,72286
+ * \tester Ricardo Ferreira Martins,72286
  */
 
 #include "syscalls.h"
 #include "syscalls.bin.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <inttypes.h>
@@ -19,42 +19,80 @@
 #include <utime.h>
 #include <libgen.h>
 #include <string.h>
-
+ 
+#include "itdealer.h"
+#include "direntry.h"
+#include "datatypes.h"
+#include "direntries.h"
+#include "fileclusters.h"
+#include <math.h>
+#include "direntry.h"
+ 
 #include "probing.h"
 #include "exception.h"
+ 
 
-/*
- *  \brief Read a directory entry from a directory.
- *
- *  It tries to emulate <em>getdents</em> system call, but it reads a single directory entry at a time.
- *
- *  Only the field <em>name</em> is read.
- *
- *  \remark The returned value is the number of bytes read from the directory in order to get the next in use
- *          directory entry. 
- *          The point is that the system (through FUSE) uses the returned value to update file position.
- *
- *  \param path path to the file
- *  \param buff pointer to the buffer where data to be read is to be stored
- *  \param pos starting [byte] position in the file data continuum where data is to be read from
- *
- *  \return 0 on success; 
- *      -errno in case of error, being errno the system error that better represents the cause of failure
- */
 int soReaddir(const char *path, void *buff, int32_t pos)
 {
     soProbe(234, "soReaddir(\"%s\", %p, %u)\n", path, buff, pos);
-
-    int ret;
+ 
     try
     {
-        /* replace next line with your code */
-        ret = soReaddirBin(path, buff, pos);
+ 
+ 
+        SODirEntry direntrieA[DirentriesPerCluster];
+        SODirEntry direntrieB[DirentriesPerCluster];
+       
+        char *pathdup = strdupa(path);
+        uint32_t inodeNumber = soTraversePath(pathdup);
+       
+        uint32_t inodeH = iOpen(inodeNumber);
+        SOInode *inode = iGetPointer(inodeH);
+ 
+        if((inode->mode && S_IFDIR) == 0)
+        {
+            iClose(inodeH);
+            throw SOException(ENOTDIR, __FUNCTION__);
+        }
+ 
+ 
+       
+        uint32_t  direntryNumber = pos/sizeof(SODirEntry);
+       
+        int clusterNumber = direntryNumber/DirentriesPerCluster;
+ 
+        int aux=1;
+ 
+        soReadFileCluster(inodeH,clusterNumber,direntrieA);
+       
+        soReadFileCluster(inodeH,0,direntrieB);
+       
+        uint32_t i=0;
+ 
+        for(i=direntryNumber;i<inode->size/sizeof(SODirEntry);i++){
+            if(i%DirentriesPerCluster==0){
+                soReadFileCluster(inodeH,i/DirentriesPerCluster,direntrieB);
+            }
+            if(direntrieB[i].name[0]=='\0')
+                {
+                    continue;
+                }else{
+                    aux=i;
+                    break;
+                }
+        }
+ 
+ 
+        memcpy(buff, direntrieA[aux].name,SOFS17_MAX_NAME);
+ 
+        iClose(inodeH);
+        return (sizeof(SODirEntry)*(aux-direntryNumber+1));
+   
     }
     catch(SOException & err)
     {
         return -err.en;
     }
-
-    return ret;
+ 
+   
 }
