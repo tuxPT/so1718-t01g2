@@ -55,6 +55,8 @@ void soFreeInode(uint32_t in)
 		{
 			// Get head node
 			int head_handler = iOpen(sbp->ihead);
+
+			iCheckHandler(head_handler, __FUNCTION__);
 			SOInode * head_node = iGetPointer(head_handler);
 
 			// Set head's previous and next node as input node
@@ -75,11 +77,13 @@ void soFreeInode(uint32_t in)
 		{
 			// Get head node
 			int head_handler = iOpen(sbp->ihead);
+			iCheckHandler(head_handler, __FUNCTION__);
+
 			SOInode * head_node = iGetPointer(head_handler);
 
 			// Get tail node
-
 			int tail_handler = iOpen(head_node->prev);
+			iCheckHandler(head_handler, __FUNCTION__);
 			SOInode * tail_node = iGetPointer(tail_handler);
 
 			// Set tail's next node as input node

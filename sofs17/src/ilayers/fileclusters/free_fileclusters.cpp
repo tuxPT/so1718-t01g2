@@ -34,6 +34,8 @@ void soFreeFileClusters(int ih, uint32_t ffcn)
 {
     soProbe(402, "soFreeFileClusters(%d, %u)\n", ih, ffcn);
 
+    iCheckHandler(ih,__FUNCTION__);
+
     // Get super block pointer
     SOSuperBlock * sbp = sbGetPointer();  
 
@@ -45,8 +47,6 @@ void soFreeFileClusters(int ih, uint32_t ffcn)
 
     unsigned int i;
 
-    // printf("DEBUG: ffcn: %d Total : %d\n", ffcn, total);
-
     // If only .d is occupied
     if (ffcn < N_DIRECT)
     {
@@ -54,7 +54,6 @@ void soFreeFileClusters(int ih, uint32_t ffcn)
         {
             if (node->d[i-1] != NullReference)
             {
-                // printf("DEBUG: FOR: %d\n", i);
                 soFreeCluster(i);
                 node->d[i-1] = NullReference;
                 total--;
@@ -77,13 +76,11 @@ void soFreeFileClusters(int ih, uint32_t ffcn)
     }
     else if (ffcn > 5 && ffcn < 518)
     {
-        // printf("DEBUG (INDIRECT): %d \n", (int)(ffcn - N_DIRECT));
         soFreeIndirectFileClusters(node->i1, node, ffcn - N_DIRECT, &total);
         soFreeDoubleIndirectFileClusters(node, 0, &total);
     }
     else
     {
-        // printf("DEBUG (INDIRECT): %d \n", (int)(ffcn - N_DIRECT - ReferencesPerBlock));
         soFreeDoubleIndirectFileClusters(node, ffcn - N_DIRECT - ReferencesPerBlock, &total);
     }
 
@@ -125,11 +122,9 @@ static void soFreeIndirectFileClusters(uint32_t i1, SOInode * ip, uint32_t ffcn,
         if (refs[i] != NullReference)
         {            
             // Decrement cluster count and free cluster
-            // printf("DEBUG: INDIRECT: CLUSTER %d cleared!\n", refs[i]);
             soFreeCluster(refs[i]);
             refs[i] = NullReference;
             (*total)--;
-            
         }
     }
 
@@ -147,25 +142,25 @@ static void soFreeIndirectFileClusters(uint32_t i1, SOInode * ip, uint32_t ffcn,
 static void soFreeDoubleIndirectFileClusters(SOInode * ip, uint32_t ffcn, int * total)
 {    
     soProbe(402, "soFreeDoubleIndirectFileClusters(%p, %u)\n", ip, ffcn);
-    // printf("DEBUG: DOUBLE arrived\n");
 
     if (ip->i2 == NullReference)
     {
         return;
     }
 
+    // Load i2 to memory
     uint32_t * refs = (uint32_t*) malloc(ReferencesPerBlock * sizeof(uint32_t));
     soReadCluster(ip->i2, refs);
 
     unsigned int i;
 
+    // Iterate references and process them as i1 blocks
     for (i = ffcn; i < ReferencesPerBlock; i++)
     {
         if (refs[i] != NullReference)
         {
             uint32_t c_refs = refs[i];
-            // printf("DEBUG: DOUBLE: c_refs: %d ffcn: %d \n", c_refs, ffcn);
-            soFreeIndirectFileClusters(c_refs, ip, 0, total); // initial location should be verified
+            soFreeIndirectFileClusters(c_refs, ip, 0, total); // initial location should be verified?
         }
     }
 
