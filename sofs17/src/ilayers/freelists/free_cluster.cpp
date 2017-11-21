@@ -29,7 +29,7 @@ soProbe(531, "soFreeCluster(%"PRIu32")\n", cn);
     }
    
     if(sb->icache.idx==NullReference){
-       deplete();
+       soDeplete();
        sb->icache.idx=0;
     }
     sb->cfree++;
