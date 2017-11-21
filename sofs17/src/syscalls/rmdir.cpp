@@ -82,11 +82,11 @@ int soRmdir(const char *path)
   
         
         // verifica se é diretorio
-        if((inode->mode && S_IFDIR) == 0)                                
+        if((inode->mode & S_IFDIR) == 0)                                
         {
             iClose(cih);
             throw SOException(ENOTDIR,__FUNCTION__);                    
-        }        
+        }              
 
 
 

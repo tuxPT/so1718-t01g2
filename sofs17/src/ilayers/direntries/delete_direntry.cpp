@@ -30,12 +30,13 @@ uint32_t soDeleteDirEntry(int pih, const char *name, bool clean)
    		return soDeleteDirEntryBin(pih, name, clean);
 	#else
 
+	iCheckHandler(pih,__FUNCTION__);
+
 	SOInode* Pinode=iGetPointer(pih);
 
-
 	//inode pai não é diretorio
-	if(!(Pinode->mode && S_IFDIR)){
-		throw SOException(ENOENT,__FUNCTION__);
+	if(!(Pinode->mode & S_IFDIR)){
+		throw SOException(ENOTDIR,__FUNCTION__);
 	}
 
     //nome do dirEntry demasiado pequeno ou vazio
