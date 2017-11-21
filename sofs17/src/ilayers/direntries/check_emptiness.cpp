@@ -11,13 +11,15 @@
 
 #include <errno.h>
 
-#include "itdealer.h"
+#include <czdealer.h>
+#include <itdealer.h>
+#include <fileclusters.h>
 
 void soCheckEmptiness(int ih)
 {
     soProbe(358, "soCheckEmptiness(%d)\n", ih);
 
-    #ifdef __original__:
+    #ifdef __original__
 
     //soCheckEmptinessBin(ih);
     #else
@@ -29,7 +31,7 @@ void soCheckEmptiness(int ih)
     SODirEntry dir_entry_list[DirentriesPerCluster];
 
     int i = 0;
-    if (i = 0; i < inode->size / ClusterSize; i++)
+    for (i = 0; i < inode->size; i++)
     {
     	// Read file cluster
     	soReadFileCluster(ih, i, dir_entry_list);
@@ -39,12 +41,14 @@ void soCheckEmptiness(int ih)
     		start = 2;
     	
     	int j = start;
-    	// Iterate dir entries
+    	// // Iterate dir entries
     	for (j = start; j < DirentriesPerCluster; j++)
     	{
-    		if (strcmp(dir_entry_list[j].ih, "\0") != 0)
+    		if (dir_entry_list[j].in != 0)
     		{
-    			// Function return type should be boolean?
+             	// Function return type should be boolean? NOTE: expected behaviour not specified in neither empty or not empty
+                // Throw exception
+                throw SOException(EINVAL,__FUNCTION__);
     			// return false;
 
     		}
