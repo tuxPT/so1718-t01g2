@@ -35,6 +35,7 @@ OBJS += add_direntry.o
 OBJS += rename_direntry.o
 OBJS += delete_direntry.o
 OBJS += traverse_path.o
+OBJS += check_emptiness.o
 
 all:			$(TARGET_LIB)
 

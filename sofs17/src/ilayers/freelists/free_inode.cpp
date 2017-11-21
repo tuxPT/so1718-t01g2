@@ -29,54 +29,87 @@ void soFreeInode(uint32_t in)
 	soFreeInodeBin(in);
 #else
 		soOpenSBDealer();
-		// Read i-node
-		uint32_t ih = iOpen(in);
-		iCheckHandler(ih);
 
-		SOInode * node = iGetPointer(ih);
+		// Read i-node
+		uint32_t node_handler = iOpen(in);
+		iCheckHandler(node_handler);
+
+		// Get pointer to node
+		SOInode * node = iGetPointer(node_handler);
 
 		// Apply bit mask
 		node->mode = node->mode | INODE_FREE;
 
 		// Read SB
-		SOSuperBlock * sb = sbGetPointer();
+		SOSuperBlock * sbp = sbGetPointer();
 
-		// Get head node
-		int hhead = iOpen(sb->ihead);
-		SOInode * headNode = iGetPointer(hhead);
-
-		if (sb->ifree == 0)
+		// If free inode list is empty
+		if (sbp->ifree == 0)
 		{
-			sb->ihead = in;
+			sbp->ihead = in;
 			node->prev = in;
 			node->next = in;
 		}
-		else if (sb->ifree == 1)
+		// If it has one element
+		else if (sbp->ifree == 1)
 		{
-			headNode->prev = in;
-			headNode->next = in;
+			// Get head node
+			int head_handler = iOpen(sbp->ihead);
 
-			node->next = sb->ihead;
-			node->prev = sb->ihead;
-			iSave(hhead);
+			iCheckHandler(head_handler, __FUNCTION__);
+			SOInode * head_node = iGetPointer(head_handler);
+
+			// Set head's previous and next node as input node
+			head_node->prev = in;
+			head_node->next = in;
+
+			// Reciprocally, set previous and next of input node as head's number
+			node->next = sbp->ihead;
+			node->prev = sbp->ihead;
+
+			// Save inodes
+			iSave(head_handler);
+			iClose(head_handler);
+			iSave(node_handler);
+			iClose(node_handler);
 		}
 		else
 		{
-			int hprev = iOpen(headNode->prev);
-			SOInode * previousNode = iGetPointer(hprev);
-			previousNode->next = in;
-			node->prev = headNode->prev;
-			headNode->prev = in;
-			node->next = sb->ihead;
+			// Get head node
+			int head_handler = iOpen(sbp->ihead);
+			iCheckHandler(head_handler, __FUNCTION__);
 
-			iSave(hhead);
-			iSave(hprev);
+			SOInode * head_node = iGetPointer(head_handler);
+
+			// Get tail node
+			int tail_handler = iOpen(head_node->prev);
+			iCheckHandler(head_handler, __FUNCTION__);
+			SOInode * tail_node = iGetPointer(tail_handler);
+
+			// Set tail's next node as input node
+			tail_node->next = in;
+
+			// Set input node next as current head
+			node->next = sbp->ihead;
+
+			// Set previous as current tail
+			node->prev = head_node->prev;
+
+			// Set head's previous as input node
+			head_node->prev = in;
+
+			// TAIL <-> HEAD ===> TAIL <-> NEW <-> HEAD
+
+			iSave(head_handler);
+			iClose(head_handler);
+			iSave(tail_handler);
+			iClose(tail_handler);
 		}
 
-		sb->ifree++;
+		sbp->ifree++;
 
-		iSave(hhead);
-		soCloseSBDealer();
-		iClose(ih);
+		sbSave();
+		iSave(node_handler);
+		iClose(node_handler);
 #endif
 }

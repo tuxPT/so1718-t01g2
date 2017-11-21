@@ -14,6 +14,8 @@
 #include "refblock.h"
 #include "direntry.h"
 
+#include <inttypes.h>
+
 /** \addtogroup constants constants 
  * \brief Some useful constants
  */

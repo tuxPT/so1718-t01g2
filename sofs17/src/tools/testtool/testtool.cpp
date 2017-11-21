@@ -259,6 +259,7 @@ static void formatDisk(void)
 
     /* wait for ENTER */
     promptMsg("\nPress ENTER to continue");
+    if (quiet > 0) return;
     fscanf(fin, "%*[^\n]");
     fPurge(fin);
 }
@@ -292,6 +293,7 @@ static void showBlock(void)
 
     /* wait for ENTER */
     promptMsg("\nPress ENTER to continue");
+    if (quiet > 0) return;
     fscanf(fin, "%*[^\n]");
     fPurge(fin);
 }
@@ -512,6 +514,7 @@ static void readFileCluster(void)
 
     /* wait for ENTER */
     promptMsg("\nPress ENTER to continue");
+    if (quiet > 0) return;
     fscanf(fin, "%*[^\n]");
     fPurge(fin);
 }
@@ -564,6 +567,7 @@ static void getDirEntry()
     /* ask for direntry name */
     promptMsg("Direntry name: ");
     char name[100];
+    name[0] = '\0';
     fscanf(fin, "%[^\n]", name);
     fPurge(fin);
 
@@ -594,6 +598,7 @@ static void addDirEntry()
     /* ask for direntry name */
     promptMsg("Direntry name: ");
     char name[100];
+    name[0] = '\0';
     fscanf(fin, "%[^\n]", name);
     fPurge(fin);
 
@@ -630,12 +635,14 @@ static void renameDirEntry()
     /* ask for direntry name */
     promptMsg("Direntry name: ");
     char name[100];
+    name[0] = '\0';
     fscanf(fin, "%[^\n]", name);
     fPurge(fin);
 
     /* ask for new direntry name */
     promptMsg("New direntry name: ");
     char newname[100];
+    newname[0] = '\0';
     fscanf(fin, "%[^\n]", newname);
     fPurge(fin);
 
@@ -666,12 +673,14 @@ static void deleteDirEntry()
     /* ask for direntry name */
     promptMsg("Direntry name: ");
     char name[100];
+    name[0] = '\0';
     fscanf(fin, "%[^\n]", name);
     fPurge(fin);
 
     /* ask for clean or non clean deletion */
     promptMsg("Clean entry (y/N): ");
     char answer[100];
+    answer[0] = '\0';
     fscanf(fin, "%[^\n]", answer);
     bool clean = (strcasecmp(answer, "y") == 0) || (strcasecmp(answer, "yes") == 0);
 
@@ -699,6 +708,7 @@ void traversePath()
     /* ask for PATH */
     promptMsg("path: ");
     char path[500];
+    path[0] = '\0';
     fscanf(fin, "%[^\n]", path);
     fPurge(fin);
 
@@ -735,6 +745,37 @@ void setInodeAccess()
     printInode(ip, in);
 
     /* save and close inode */
+    iSave(ih);
+    iClose(ih);
+}
+
+/* ******************************************** */
+/* change the owner and group of an inode */
+void changeOwnership()
+{
+    /* ask for inode number */
+    promptMsg("inode number: ");
+    uint32_t in;
+    fscanf(fin, "%u", &in);
+    fPurge(fin);
+
+    /* ask for owner id */
+    promptMsg("owner id: ");
+    uint32_t own_id;
+    fscanf(fin, "%u", &own_id);
+    fPurge(fin);
+
+    /* ask for group id */
+    promptMsg("group id: ");
+    uint32_t grp_id;
+    fscanf(fin, "%u", &grp_id);
+    fPurge(fin);
+
+    /* change ownership */
+    int ih = iOpen(in);
+    SOInode * ip = iGetPointer(ih);
+    ip->owner = own_id;
+    ip->group = grp_id;
     iSave(ih);
     iClose(ih);
 }
@@ -844,8 +885,11 @@ public:
         hdl["spd"] = setProbeDepths;
         hdl["cia"] = checkInodeAccess;
         hdl["sia"] = setInodeAccess;
-        hdl["iic"] = incInodeLnkcnt;
-        hdl["dic"] = decInodeLnkcnt;
+        hdl["iil"] = incInodeLnkcnt;
+        hdl["dil"] = decInodeLnkcnt;
+        hdl["iilc"] = incInodeLnkcnt;
+        hdl["dilc"] = decInodeLnkcnt;
+        hdl["cog"] = changeOwnership;
     }
 
     void exec(std::string & key)
@@ -896,6 +940,7 @@ public:
              "+--------------------------------+-------------------------------+\n"
              "+ cia - check inode access       | sia - set inode access        +\n"
              "+ iil - increment inode lnkcnt   | dil - decrement inode lnkcnt  +\n"
+             "+ cog - change owner and group   |                               +\n"
              "+================================================================+\n");
     }
 

@@ -120,7 +120,11 @@ void printSuperBlock(void *buf)
     printf("Free cluster table metadata:\n");
     printf("   First block of the free cluster table: %u\n", sbp->rmstart);
     printf("   Number of blocks of the free cluster table: %u\n", sbp->rmsize);
-    printf("   Index of first byte to retrieve references: %u\n", sbp->rmidx);
+    printf("   Index of first byte to retrieve references: ");
+    if (sbp->rmidx == NullReference)
+        printf("(nil)\n");
+    else
+        printf("%u\n", sbp->rmidx);
 
     /* clusters metadata */
     printf("Clusters metadata:\n");
@@ -130,9 +134,9 @@ void printSuperBlock(void *buf)
     printf("   Retrieval cache:\n");
     printf("      Index of the first filled cache element: ");
     if (sbp->rcache.idx == REFERENCE_CACHE_SIZE)
-        printf(" (nil)\n");
+        printf("(nil)\n");
     else
-        printf(" %u\n", sbp->rcache.idx);
+        printf("%u\n", sbp->rcache.idx);
     printf("      Cache contents:\n");
     printf("        ");
     for (uint32_t i = 0; i < REFERENCE_CACHE_SIZE; i++)
@@ -244,7 +248,7 @@ void printInode(void* buf, uint32_t in)
             printf("(nil), ");
         else
             printf("%"PRIu32", ", ip->next);
-        printf(", prev = ");
+        printf("prev = ");
         if (ip->prev == NullReference)
             printf("(nil)\n");
         else
