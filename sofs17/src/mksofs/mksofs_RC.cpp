@@ -1,3 +1,5 @@
+//autor: Fábio Mendes nº72324
+
 #include "mksofs.h"
 #include "mksofs.bin.h"
 
