@@ -24,17 +24,17 @@ void soFreeCluster(uint32_t cn)
 soProbe(531, "soFreeCluster(%"PRIu32")\n", cn);
     //soFreeClusterBin(cn);
     SOSuperBlock *sb=sbGetPointer();
-    if(cn<sb->ctotal){
+    if(cn>sb->ctotal){
        throw SOException(EINVAL,__FUNCTION__); 
     }
    
-    if(sb->icache.idx==NullReference){
+    if(sb->icache.idx==REFERENCE_CACHE_SIZE){
        soDeplete();
        sb->icache.idx=0;
     }
     sb->cfree++;
     sb->icache.ref[sb->icache.idx]=cn;
-    if(sb->icache.idx+1==REFERENCE_CACHE_SIZE)sb->icache.idx=NullReference;
+    if(sb->icache.idx+1==REFERENCE_CACHE_SIZE)sb->icache.idx=REFERENCE_CACHE_SIZE;
     else sb->icache.idx++;
     sbSave();
 
