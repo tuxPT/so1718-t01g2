@@ -35,8 +35,8 @@ static void soAllocDoubleIndirectFileCluster(SOInode * ip, uint32_t fcn, uint32_
 uint32_t soAllocFileCluster(int ih, uint32_t fcn)
 {
 	//#define __original__
+	soProbe(401, "soAllocFileCluster(%d, %u)\n", ih, fcn);
     #ifdef __original__
-    	soProbe(401, "soAllocFileCluster(%d, %u)\n", ih, fcn);
 		return soAllocFileClusterBin(ih, fcn);
 	#else
 	

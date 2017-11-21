@@ -49,8 +49,8 @@
 int soRmdir(const char *path)
 {
     //#define __original__
+    soProbe(233, "soRmdir(\"%s\")\n", path);
     #ifdef __original__
-        soProbe(233, "soRmdir(\"%s\")\n", path);
         soRmdirBin(path);
     #else
 

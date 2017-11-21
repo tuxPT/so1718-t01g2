@@ -27,8 +27,8 @@
 uint32_t soAllocInode(uint32_t type)
 {
     //#define __original__
+    soProbe(502, "soAllocInode(%"PRIu32", %p)\n", type);
     #ifdef __original__
-        soProbe(502, "soAllocInode(%"PRIu32", %p)\n", type);
         return soAllocInodeBin(type);
     #else
 

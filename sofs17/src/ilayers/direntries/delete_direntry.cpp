@@ -25,8 +25,8 @@ uint32_t soDeleteDirEntry(int pih, const char *name, bool clean)
 {
 
 	//#define __original__
+	soProbe(353, "soDeleteDirEntry(%d, %s, %s)\n", pih, name, clean ? "true" : "false");
     #ifdef __original__
-    	soProbe(353, "soDeleteDirEntry(%d, %s, %s)\n", pih, name, clean ? "true" : "false");
    		return soDeleteDirEntryBin(pih, name, clean);
 	#else
 
