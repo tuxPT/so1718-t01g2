@@ -1,3 +1,8 @@
+/**
+ *  \author Leonardo Miguel Oliveira Costa 80162
+ *  \tester Leonardo Miguel Oliveira Costa 80162
+ */
+
 #include "mksofs.h"
 #include "mksofs.bin.h"
 

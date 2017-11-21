@@ -1,6 +1,6 @@
 /**
- *  \author ...
- *  \tester ...
+ *  \author Leonardo Miguel Oliveira Costa 80162
+ *  \tester Leonardo Miguel Oliveira Costa 80162
  */
 
 #include "direntries.h"
@@ -15,6 +15,7 @@
 #include <czdealer.h>
 #include <itdealer.h>
 #include <fileclusters.h>
+#include "fileclusters.bin.h"
 
 /* assumes that:
  * - pih is a valid inode handler of a directory where the user has write access
@@ -28,51 +29,26 @@ void soAddDirEntry(int pih, const char *name, uint32_t cin)
     #ifdef __original__
     soAddDirEntryBin(pih, name, cin);
     #else
+    if(name[0] == '\0')
+    {
+        throw SOException(EINVAL, __FUNCTION__);
+    }
+    else if(strlen(name) > SOFS17_MAX_NAME)
+    {
+        throw SOException(ENAMETOOLONG, __FUNCTION__);
+    }
     SOInode* pinode = iGetPointer(pih);
     uint32_t i = 0;
     // onde e armazenado o cluster atual lido
     SODirEntry* entries2read = (SODirEntry*) malloc(DirentriesPerCluster * sizeof(SODirEntry));
-    uint32_t* references; // array de referencias para clusters contendo SODirEntries
-    uint32_t* references2; // array de referencias para clusters do tipo i1
     uint32_t cluster2read; // cluster a ler
     bool ffentry = false; // indica se existe expaço para armazenar uma SODirEntry
     uint32_t cluster2write; // cluster a escrever
     SODirEntry* entries2write; // array de SODirEntries a gravar
     uint32_t first_nullref = NullReference; // variavel que vai conter a primeira posicao livre
-    // if i1 exists
-    if(pinode->i1 != NullReference)
+    while(i < pinode->size/ClusterSize)
     {
-        references = (uint32_t*) malloc(ReferencesPerCluster * sizeof(uint32_t));
-        soReadCluster(pinode->i1, references);
-        // if i2 exists
-        if(pinode->i2 != NullReference)
-        {
-            references2 = (uint32_t*) malloc(ReferencesPerCluster * sizeof(uint32_t));
-            soReadCluster(pinode->i2, references2);
-        }
-    }
-    while(i < pinode->clucnt)
-    {
-        if(i < N_DIRECT && pinode->d[i] != NullReference)
-        {
-            cluster2read = pinode->d[i];
-            if(cluster2read != NullReference) soReadCluster(cluster2read, entries2read);
-        }
-        else if(i >= N_DIRECT && i< ReferencesPerCluster)
-        {
-            cluster2read = references[i-N_DIRECT];
-            if(cluster2read != NullReference) soReadCluster(cluster2read, entries2read);
-        }
-        else if(i >= ReferencesPerCluster && i < ReferencesPerCluster * ReferencesPerCluster)
-        {
-            cluster2read = references2[(i-N_DIRECT-ReferencesPerCluster) / ReferencesPerCluster];
-            if(cluster2read != NullReference)
-            {
-                soReadCluster(cluster2read, references);
-                cluster2read = references[(i-N_DIRECT-ReferencesPerCluster) % ReferencesPerCluster];
-                if(cluster2read != NullReference) soReadCluster(cluster2read, entries2read);
-            }
-        }
+        soGetFileCluster(pih, i);
         if(cluster2read == NullReference)
         {
             if(first_nullref == NullReference)
@@ -82,12 +58,13 @@ void soAddDirEntry(int pih, const char *name, uint32_t cin)
             i++;
             continue;
         }
+        soReadFileCluster(pih, i, entries2read);
         uint32_t entry = 0;
         while(entry < DirentriesPerCluster)
         {
             if(strcmp(entries2read[entry].name, name) == 0)
             {
-                i = pinode->clucnt;
+                i = pinode->size;
                 break;
             }
             else if(ffentry == false && entries2read[entry].name[0] == '\0')
@@ -103,18 +80,18 @@ void soAddDirEntry(int pih, const char *name, uint32_t cin)
         }
         i++;
     }
-    if(i != pinode->clucnt + 1)
+    if(i != pinode->size)
     {
         if(ffentry == true)
         {
-            soWriteCluster(cluster2write, entries2write);
+            soWriteFileCluster(pih, cluster2write, entries2write);
         }
         else
         {
             entries2write = (SODirEntry*) calloc(DirentriesPerCluster, sizeof(SODirEntry));
             memcpy(entries2write[0].name, name, SOFS17_MAX_NAME+1);
             cluster2write = soAllocFileCluster(pih,first_nullref);
-            soWriteCluster(cluster2write, entries2write);
+            soWriteFileCluster(pih,cluster2write, entries2write);
         }
     }
     #endif

@@ -1,6 +1,6 @@
 /**
- *  \author Leonardo Costa
- *  \tester ...
+ *  \author Leonardo Miguel Oliveira Costa 80162
+ *  \tester Leonardo Miguel Oliveira Costa 80162
  */
 
 #include "freelists.h"
@@ -26,7 +26,7 @@
  */
 void soReplenish(void)
 {
-#define __original__
+//#define __original__
     soProbe(542, "soReplenish()\n");
 #ifdef __original__
     soReplenishBin();
