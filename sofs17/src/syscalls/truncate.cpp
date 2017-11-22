@@ -65,7 +65,7 @@ int soTruncate(const char *path, off_t length)
         uint32_t in = soTraversePath(Path);
         int ih = iOpen(in);
         iCheckHandler(ih, __FUNCTION__);
-        if(iCheckAccess(ih, W_OK))
+        if(!iCheckAccess(ih, W_OK))
         {
             iSave(ih);
             iClose(ih);
