@@ -48,7 +48,7 @@ void soCheckEmptiness(int ih)
     		{
              	// Function return type should be boolean? NOTE: expected behaviour not specified in neither empty or not empty
                 // Throw exception
-                throw SOException(EINVAL,__FUNCTION__);
+                throw SOException(ENOTEMPTY,__FUNCTION__);
     			// return false;
 
     		}
