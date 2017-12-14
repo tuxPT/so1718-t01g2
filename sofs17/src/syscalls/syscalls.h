@@ -120,7 +120,7 @@ int soMknod(const char *path, mode_t mode);
  *  \param count number of bytes to be read
  *  \param pos starting [byte] position in the file data continuum where data is to be read from
  *
- *  \return 0 on success; 
+ *  \return the number of bytes read, on success; 
  *      -errno in case of error, being errno the system error that better represents the cause of failure
  */
 int soRead(const char *path, void *buff, uint32_t count, int32_t pos);
@@ -139,7 +139,7 @@ int soRead(const char *path, void *buff, uint32_t count, int32_t pos);
  *  \param count number of bytes to be written
  *  \param pos starting [byte] position in the file data continuum where data is to be written into
  *
- *  \return 0 on success; 
+ *  \return the number of bytes written, on success; 
  *      -errno in case of error, being errno the system error that better represents the cause of failure
  */
 int soWrite(const char *path, void *buff, uint32_t count, int32_t pos);
