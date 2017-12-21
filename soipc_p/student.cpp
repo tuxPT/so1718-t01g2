@@ -10,6 +10,7 @@
 #include "librarian.h"
 #include "student.h"
 
+
 enum State
 {
    NONE = 0,
@@ -143,6 +144,7 @@ int logIdStudent(struct _Student_* student)
 
 static void life(Student* student)
 {
+   printf("life");
    enrollUniversity(student);
    for(int c = 0; c < student->numCourses; c++)
    {
@@ -164,15 +166,21 @@ static void life(Student* student)
 }
 
 static void enrollUniversity(Student* student)
-{
+{  
    /* TODO: student should notify librarian */
+   reqEnrollStudent();
+   printf("\nenrollUniversity");
+   //wait(&librarian);
 }
 
 static void unEnrollUniversity(Student* student)
 {
    /* TODO: student should notify librarian */
+   reqDisenrollStudent();
+   printf("\nunEnrollUniversity");
+   //signal(&librarian);
 }
-
+   
 static void enrollCourse(Student* student)
 {
    /** TODO:
@@ -181,6 +189,9 @@ static void enrollCourse(Student* student)
     * 3: get booklist from course;
     * 4: initialize student relevant state
     **/
+   student->state = NORMAL;
+   printf("\nenrollCourse");
+
 }
 
 static void sleep(Student* student)
@@ -189,6 +200,11 @@ static void sleep(Student* student)
     * 1: sleep (state: SLEEPING). Don't forget to spend time randomly in
     *    interval [global->MIN_SLEEPING_TIME_UNITS, global->MAX_SLEEPING_TIME_UNITS]
     **/
+   student->state = SLEEPING;
+   spend(randomInt(global->MIN_SLEEPING_TIME_UNITS,global->MAX_SLEEPING_TIME_UNITS));
+   printf("sleep");
+   printf("\n");
+
 }
 
 static void eat(Student* student, int meal) // 0: breakfast; 1: lunch; 2: dinner
@@ -199,6 +215,25 @@ static void eat(Student* student, int meal) // 0: breakfast; 1: lunch; 2: dinner
     * 1: eat (state: BREAKFAST or LUNCH or DINNER). Don't forget to spend time randomly in
     *    interval [global->MIN_EATING_TIME_UNITS, global->MAX_EATING_TIME_UNITS]
     **/
+   switch(meal)
+   {
+      case 0:
+         student->state = BREAKFAST;
+         break;
+      case 1:
+         student->state = LUNCH;
+         break;
+      case 2:
+         student->state = DINNER;
+         break;
+      default:
+         student->state = BREAKFAST; 
+         break;
+   }
+   spend(randomInt(global->MIN_EATING_TIME_UNITS,global->MAX_EATING_TIME_UNITS));
+   printf("eat");
+   printf("\n");
+   
 }
 
 static void study(Student* student)
@@ -224,6 +259,9 @@ static void study(Student* student)
 
       // leave books in table
       student->studyBookList = NULL;
+      student->state = STUDYING;
+      spend(randomInt(global->MIN_STUDY_TIME_UNITS,global->MAX_STUDY_TIME_UNITS));
+
    }
 }
 
@@ -233,6 +271,8 @@ static void fun(Student* student)
     * 1: have fun (state: HAVING_FUN). Don't forget to spend time randomly in
     *    interval [global->MIN_FUN_TIME_UNITS, global->MAX_FUN_TIME_UNITS]
     **/
+   student->state = HAVING_FUN;
+   spend(randomInt(global->MIN_FUN_TIME_UNITS,global->MAX_FUN_TIME_UNITS));
 }
 
 static void done(Student* student)
@@ -240,6 +280,7 @@ static void done(Student* student)
    /** TODO:
     * 1:  life in university is over (state: DONE).
     **/
+   student->state = DONE;
 }
 
 static int courseConcluded(Student* student)
