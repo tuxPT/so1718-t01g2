@@ -67,7 +67,7 @@ int alive()
    /* TODO: change this function to your needs */
 
    int res;
-   res = _alive_ || eventExists();
+   res = _alive_ && eventExists();
    return res;
 }
 
@@ -158,6 +158,10 @@ void* mainLogger(void* arg)
        * 1: wait for a log event (or termination)
        * 2. processEvents (if any)
        **/
+
+      processEvents();
+      printf("mainLogger");
+      printf("\n");
    }
    return NULL;
 }
@@ -174,6 +178,11 @@ static void processEvents()
    while(sizeQueue(queue) > 0)
    {
       Event* e = (Event*)outQueue(queue);
+      //remove Lines 72255
+      printf("\n");
+      printf(" id = %d", e->logId);
+      printf("\n");
+      //
       printEvent(e);
    }
 }

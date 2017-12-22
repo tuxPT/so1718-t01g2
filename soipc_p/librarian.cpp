@@ -249,6 +249,8 @@ void reqEnrollStudent()
     * 1: queue reqQueue should be updated and a notification send to librarian active entity
     * 2: does not wait for response.
     **/
+   Request* newStudent = newEnrollStudentRequest();
+   handleRequest(newStudent);
 }
 
 void reqDisenrollStudent()
@@ -257,6 +259,8 @@ void reqDisenrollStudent()
     * 1: queue reqQueue should be updated and a notification send to librarian active entity
     * 2: does not wait for response.
     **/
+   Request* freeStudent = newDisenrollStudentRequest();
+   handleRequest(freeStudent);
 }
 
 void reqTermination()

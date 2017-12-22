@@ -238,7 +238,7 @@ static void eat(Student* student, int meal) // 0: breakfast; 1: lunch; 2: dinner
 
 static void study(Student* student)
 {
-   assert (student->completionPercentage == 100 || student->studyTime != NULL);
+   assert (student->completionPercentage != 100 || student->studyTime != NULL);
 
    if (student->completionPercentage < 100)
    {

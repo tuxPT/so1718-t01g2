@@ -22,6 +22,7 @@
 #include "librarian.h"
 #include "student.h"
 #include "all-courses.h"
+#include "process.h"
 
 static struct _Student_** students = NULL;
 
@@ -32,6 +33,7 @@ static void showParams(Parameters *params);
 static void go();
 static void finish();
 static void initSimulation();
+void proc_create(int * pidp, void* (*routine)(void*), void* arg);
 
 static const char* names[] = {
   "Ana", "Paulo", "Luis", "Miguel", "Jose", "Joao", "Antonio", "Abel",
@@ -78,11 +80,39 @@ static void go()
    /* TODO: change this function to your needs */
 
    assert (students != NULL);
+   printf("ola");
 
-/* remove the following code: */
-void dummyLogger();
-dummyLogger();
-/* end of removal */
+   /* launching the librarian process */
+   int librarianID;
+   proc_create(&(librarianID), mainLibrarian, NULL);
+
+   /* launching the processes/students */
+   int pid[global->NUM_STUDENTS];
+   int i;
+   for (i=0; i<global->NUM_STUDENTS; i++)
+   {
+      proc_create(&(pid[i]), mainStudent, students[i]);
+      printf("Process %d launched\n", pid[i]);
+   }
+
+   /* wait for processes/students to conclude */
+   int status[global->NUM_STUDENTS];
+   printf("Waiting for processes to return\n");
+   for (i=0; i<global->NUM_STUDENTS; i++)
+   {
+      pwaitpid(pid[i], &status[i], 0);
+      printf("Process %d returned\n", pid[i]);
+   }
+   
+   int statusLibrarian;
+   /* wait for the librarian process to conclude*/
+   pwaitpid(librarianID, &statusLibrarian, 0);
+   
+   
+   void* mainLogger(void* arg);
+   mainLogger((void*) 'a');
+
+
 }
 
 /**
@@ -91,6 +121,8 @@ dummyLogger();
 static void finish()
 {
    /* TODO: change this function to your needs */
+   printf("adeus");
+   printf("\n");
 }
 
 static void initSimulation()
@@ -408,3 +440,20 @@ static void showParams(Parameters *params)
    printf("\n");
 }
 
+/* launcher of a process to run a given routine */
+void proc_create(int * pidp, void* (*routine)(void*), void* arg)
+{
+   int pid = pfork();
+   switch (pid)
+   {
+      case 0:
+         break;
+
+      default:
+         *pidp = pid;
+         return;
+   }
+
+   /* child side: run given routine */
+   routine(arg);
+}
