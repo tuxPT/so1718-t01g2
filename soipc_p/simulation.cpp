@@ -80,11 +80,11 @@ static void go()
    /* TODO: change this function to your needs */
 
    assert (students != NULL);
-   printf("ola");
 
    /* launching the librarian process */
    int librarianID;
    proc_create(&(librarianID), mainLibrarian, NULL);
+   printf("mainLibrarian Process %d launched\n", librarianID);
 
    /* launching the processes/students */
    int pid[global->NUM_STUDENTS];
@@ -92,7 +92,7 @@ static void go()
    for (i=0; i<global->NUM_STUDENTS; i++)
    {
       proc_create(&(pid[i]), mainStudent, students[i]);
-      printf("Process %d launched\n", pid[i]);
+      printf("mainStudent Process %d launched\n", pid[i]);
    }
 
    /* wait for processes/students to conclude */
@@ -101,13 +101,13 @@ static void go()
    for (i=0; i<global->NUM_STUDENTS; i++)
    {
       pwaitpid(pid[i], &status[i], 0);
-      printf("Process %d returned\n", pid[i]);
+      printf("mainStudent Process %d returned\n", pid[i]);
    }
    
    int statusLibrarian;
    /* wait for the librarian process to conclude*/
    pwaitpid(librarianID, &statusLibrarian, 0);
-   
+   printf("mainLibrarian Process %d returned\n", librarianID);
    
    void* mainLogger(void* arg);
    mainLogger((void*) 'a');
@@ -444,16 +444,16 @@ static void showParams(Parameters *params)
 void proc_create(int * pidp, void* (*routine)(void*), void* arg)
 {
    int pid = pfork();
-   switch (pid)
+   /* child side */
+   if(pid == 0)
    {
-      case 0:
-         break;
-
-      default:
-         *pidp = pid;
-         return;
+      routine(arg); // run given routine
+      exit(0); // kill child process
    }
-
-   /* child side: run given routine */
-   routine(arg);
+   /* parent side */
+   else
+   {
+      *pidp = pid;
+      return;
+   }
 }
