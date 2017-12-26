@@ -448,7 +448,7 @@ void proc_create(int * pidp, void* (*routine)(void*), void* arg)
    if(pid == 0)
    {
       routine(arg); // run given routine
-      exit(0); // kill child process
+      exit(0);
    }
    /* parent side */
    else
@@ -456,4 +456,5 @@ void proc_create(int * pidp, void* (*routine)(void*), void* arg)
       *pidp = pid;
       return;
    }
+
 }

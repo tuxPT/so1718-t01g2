@@ -155,7 +155,7 @@ static int aliveLibrarian()
    /** TODO:
     * 1: librarian should be alive until a request for termination and an empty reqQueue
     **/
-
+   life();
    return 0;
 }
 
@@ -165,6 +165,10 @@ static void sleep()
     * 1: sleep (state: SLEEPING). Don't forget to spend time randomly in
     *    interval [global->MIN_SLEEPING_TIME_UNITS, global->MAX_SLEEPING_TIME_UNITS]
     **/
+   state = SLEEPING;
+   spend(randomInt(global->MIN_SLEEPING_TIME_UNITS,global->MAX_SLEEPING_TIME_UNITS));
+   printf("\n");
+   printf("sleep - librarian");
 }
 
 static void eat(int meal) // 0: breakfast; 1: lunch; 2: dinner
@@ -175,6 +179,22 @@ static void eat(int meal) // 0: breakfast; 1: lunch; 2: dinner
     * 1: eat (state: BREAKFAST or LUNCH or DINNER). Don't forget to spend time randomly in
     *    interval [global->MIN_EATING_TIME_UNITS, global->MAX_EATING_TIME_UNITS]
     **/
+
+   switch(meal)
+   {
+      case 0:
+         state = BREAKFAST;
+         break;
+      case 1:
+         state = LUNCH;
+         break;
+      case 2:
+         state = DINNER;
+         break;
+   }
+   spend(randomInt(global->MIN_EATING_TIME_UNITS,global->MAX_EATING_TIME_UNITS));
+   printf("\n");
+   printf("eat - librarian");
 }
 
 static void handleRequests()
@@ -229,6 +249,10 @@ static void fun()
     * 1: have fun (state: HAVING_FUN). Don't forget to spend time randomly in
     *    interval [global->MIN_FUN_TIME_UNITS, global->MAX_FUN_TIME_UNITS]
     **/
+   state = HAVING_FUN;
+   spend(randomInt(global->MIN_FUN_TIME_UNITS,global->MAX_FUN_TIME_UNITS));
+   printf("\n");
+   printf("fun - librarian");
 }
 
 static void done()
@@ -236,6 +260,9 @@ static void done()
    /** TODO:
     * 1:  life of librarian is over (state: DONE).
     **/
+   state = DONE;
+   printf("\n");
+   printf("done - librarian");
 }
 
 int lengthLibrarian()
