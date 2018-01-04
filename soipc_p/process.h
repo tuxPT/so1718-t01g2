@@ -10,43 +10,6 @@
 //#define EXCEPTION_POLICY
 //#define EXIT_POLICY // DEFAULT
 
-#ifdef EXCEPTION_POLICY
-#define check_error(status) \
-   if (status == -1) \
-      throw errno
-#define pcheck_error(status) \
-   if (status == (void*)-1) \
-      throw errno
-#define psemcheck_error(status) \
-   if (status == SEM_FAILED) \
-      throw errno
-#else
-#define check_error(status) \
-   if (status == -1) \
-      do { \
-         fprintf (stderr, "%s at \"%s\":%d: %s\n", \
-                  __FUNCTION__ , __FILE__, __LINE__, strerror (errno)); \
-         *((int*)0) = 0; \
-         abort (); \
-      } while (0)
-#define pcheck_error(status) \
-   if (status == (void*)-1) \
-      do { \
-         fprintf (stderr, "%s at \"%s\":%d: %s\n", \
-                  __FUNCTION__ , __FILE__, __LINE__, strerror (errno)); \
-         *((int*)0) = 0; \
-         abort (); \
-      } while (0)
-#define psemcheck_error(status) \
-   if (status == SEM_FAILED) \
-      do { \
-         fprintf (stderr, "%s at \"%s\":%d: %s\n", \
-                  __FUNCTION__ , __FILE__, __LINE__, strerror (errno)); \
-         *((int*)0) = 0; \
-         abort (); \
-      } while (0)
-#endif
-
 // process
 //
 pid_t pfork(void);
@@ -65,6 +28,8 @@ void pshmdt(const void *shmaddr);
 int psemget(key_t key, int nsems, int semflg);
 int psemctl(int semid, int semnum, int cmd, ...);
 void psemop(int semid, struct sembuf *sops, size_t nsops);
+void psem_up(int semid, short unsigned int index);
+void psem_down(int semid, short unsigned int index);
 
 // POSIX semaphores
 

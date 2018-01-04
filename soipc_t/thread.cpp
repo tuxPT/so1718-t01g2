@@ -7,6 +7,21 @@
 #include <pthread.h>
 #include "thread.h"
 
+#ifdef EXCEPTION_POLICY
+#define check_error(status) \
+   if (status != 0) \
+      throw status
+#else
+#define check_error(status) \
+   if (status != 0) \
+      do { \
+         fprintf (stderr, "%s at \"%s\":%d: %s\n", \
+                  __FUNCTION__ , __FILE__, __LINE__, strerror (status)); \
+         *((int*)0) = 0; \
+         abort (); \
+      } while (0)
+#endif
+
 int thread_equal(pthread_t t1, pthread_t t2)
 {
    return pthread_equal(t1, t2);
