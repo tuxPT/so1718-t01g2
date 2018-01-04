@@ -6,21 +6,6 @@
 //#define EXCEPTION_POLICY
 //#define EXIT_POLICY // DEFAULT
 
-#ifdef EXCEPTION_POLICY
-#define check_error(status) \
-   if (status != 0) \
-      throw status
-#else
-#define check_error(status) \
-   if (status != 0) \
-      do { \
-         fprintf (stderr, "%s at \"%s\":%d: %s\n", \
-                  __FUNCTION__ , __FILE__, __LINE__, strerror (status)); \
-         *((int*)0) = 0; \
-         abort (); \
-      } while (0)
-#endif
-
 // thread:
 int thread_equal(pthread_t t1, pthread_t t2);
 void thread_create(pthread_t* t, pthread_attr_t* attr, void *(*thread_main)(void*), void* arg);

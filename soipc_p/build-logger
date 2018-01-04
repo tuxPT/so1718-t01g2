@@ -1,0 +1,3 @@
+#!/bin/bash
+
+g++ -ggdb -Wall -pthread logger.cpp test-logger.cpp utils.cpp thread.cpp process.cpp queue.cpp -o test-logger

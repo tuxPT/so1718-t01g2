@@ -9,6 +9,43 @@
 #include <sys/wait.h>
 #include "process.h"
 
+#ifdef EXCEPTION_POLICY
+#define check_error(status) \
+   if (status == -1) \
+      throw errno
+#define pcheck_error(status) \
+   if (status == (void*)-1) \
+      throw errno
+#define psemcheck_error(status) \
+   if (status == SEM_FAILED) \
+      throw errno
+#else
+#define check_error(status) \
+   if (status == -1) \
+      do { \
+         fprintf (stderr, "%s at \"%s\":%d: %s\n", \
+                  __FUNCTION__ , __FILE__, __LINE__, strerror (errno)); \
+         *((int*)0) = 0; \
+         abort (); \
+      } while (0)
+#define pcheck_error(status) \
+   if (status == (void*)-1) \
+      do { \
+         fprintf (stderr, "%s at \"%s\":%d: %s\n", \
+                  __FUNCTION__ , __FILE__, __LINE__, strerror (errno)); \
+         *((int*)0) = 0; \
+         abort (); \
+      } while (0)
+#define psemcheck_error(status) \
+   if (status == SEM_FAILED) \
+      do { \
+         fprintf (stderr, "%s at \"%s\":%d: %s\n", \
+                  __FUNCTION__ , __FILE__, __LINE__, strerror (errno)); \
+         *((int*)0) = 0; \
+         abort (); \
+      } while (0)
+#endif
+
 // process
 
 pid_t pfork(void)
@@ -89,6 +126,19 @@ void psemop(int semid, struct sembuf *sops, size_t nsops)
    int st = semop(semid, sops, nsops);
    check_error(st);
 }
+
+void psem_up(int semid, short unsigned int index)
+{
+   struct sembuf op = {index, 1, 0};
+   psemop(semid, &op, 1);
+}
+
+void psem_down(int semid, short unsigned int index)
+{
+   struct sembuf op = {index, -1, 0};
+   psemop(semid, &op, 1);
+}
+
 
 // POSIX semaphores
 

@@ -25,6 +25,7 @@ typedef struct _Event_
 
 static Regist* newRegist(char* name, int line, int column, int numLines, int numColumns, char** lineModeTranslations);
 static Event* newEvent(int logId, char* text);
+static void destroyEvent(Event* e);
 
 static int eventExists();
 static void processEvents();
@@ -75,8 +76,7 @@ void initLogger()
 {
    /* TODO: change this function to your needs */
 
-   if (!_lineMode_)
-      clearConsole();
+
 }
 
 void termLogger()
@@ -152,6 +152,8 @@ void sendLog(int logId, char* text)
 
 void* mainLogger(void* arg)
 {
+   if (!_lineMode_)
+      clearConsole();
    while(alive())
    {
       /** TODO:
@@ -184,6 +186,7 @@ static void processEvents()
       printf("\n");
       //
       printEvent(e);
+      destroyEvent(e);
    }
 }
 
@@ -290,6 +293,7 @@ static void printEvent(Event* e)
             t[end] = '\0';
          moveCursor(areas[e->logId]->line+l, areas[e->logId]->column);
          printf("%s", t);
+         fflush(stdout);
          t += end+1;
          l++;
       }
@@ -362,8 +366,14 @@ static Event* newEvent(int logId, char* text)
 {
    Event* res = (Event*)memAlloc(sizeof(Event));
    res->logId = logId;
-   res->text = text;
+   res->text = strdup(text);
    return res;
+}
+
+static void destroyEvent(Event* e)
+{
+   free(e->text);
+   free(e);
 }
 
 void dummyLogger()
