@@ -4,12 +4,6 @@
 #include "utils.h"
 #include "book.h"
 
-typedef struct _Book_
-{
-   int alloc;
-   char name[MAX_NAME_SIZE+1];
-} Book;
-
 int totalSizeOfBook()
 {
    return sizeof(Book);

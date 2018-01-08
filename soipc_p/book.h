@@ -9,7 +9,13 @@
 
 #include "global.h"
 
-struct _Book_; // private data structure
+// private data structure
+typedef struct _Book_
+{
+   int alloc;
+   char name[MAX_NAME_SIZE+1];
+} Book;
+
 
 // export to library:
 int totalSizeOfBook();
