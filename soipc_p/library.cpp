@@ -10,12 +10,13 @@
 
 typedef struct _Library_
 {
-   struct _Book_** bookList;
-   int* bookQuantity;
-   int* bookAvailable;
-   int* seatOccupied;
+   struct _Book_ bookList[MAX_BOOKS]; // global->NUM_BOOKS
+   int bookQuantity[MAX_BOOKS];
+   int bookAvailable[MAX_BOOKS];
+   int seatOccupied[MAX_SEATS];
    int booksInTransit; // not in the bookshelf or in table
-   struct _Book_*** booksInSeat;
+   struct _Book_ booksInSeat[MAX_SEATS][MAX_BOOKS];
+   int numBooksInSeat[MAX_SEATS]; // new
    int logIdBookShelf;
    int logIdTables;
    /* TODO: change this structure to your needs */
@@ -43,9 +44,7 @@ static int bookSearch(struct _Book_* book);
 
 int totalSizeOfLibraryDataStructure()
 {
-   return sizeof(Library) + totalSizeOfBook()*sizeof(struct _Book_*)*global->NUM_BOOKS +
-          2*sizeof(int)*global->NUM_BOOKS + sizeof(int)*(global->NUM_TABLES*global->NUM_SEATS_PER_TABLE) +
-          sizeof(struct _Book_*)*(global->NUM_TABLES*global->NUM_SEATS_PER_TABLE);
+   return sizeof(Library);
 }
 
 static void allocLibraryDataStructure()
@@ -55,13 +54,6 @@ static void allocLibraryDataStructure()
    assert (library == NULL);
 
    library = (Library*)shmAlloc(sizeof(Library));
-   library->bookList = (struct _Book_**)shmAlloc(sizeof(struct _Book_*)*global->NUM_BOOKS);
-   for (int i = 0; i < global->NUM_BOOKS; i++)
-      library->bookList[i] = (struct _Book_*)shmAlloc(totalSizeOfBook());
-   library->bookQuantity = (int*)shmAlloc(sizeof(int)*global->NUM_BOOKS);
-   library->bookAvailable = (int*)shmAlloc(sizeof(int)*global->NUM_BOOKS);
-   library->seatOccupied = (int*)shmAlloc(sizeof(int)*global->NUM_TABLES*global->NUM_SEATS_PER_TABLE);
-   library->booksInSeat = (struct _Book_***)shmAlloc(sizeof(struct _Book_**)*global->NUM_TABLES*global->NUM_SEATS_PER_TABLE);
 }
 
 static void freeLibraryDataStructure()
@@ -70,14 +62,6 @@ static void freeLibraryDataStructure()
 
    assert (library != NULL);
 
-   free(library->booksInSeat);
-   free(library->seatOccupied);
-   free(library->bookAvailable);
-   free(library->bookQuantity);
-   for (int i = 0; i < global->NUM_BOOKS; i++)
-      free(library->bookList[i]);
-   free(library->bookList);
-   free(library);
    library = NULL;
 }
 
@@ -93,13 +77,13 @@ void initLibrary()
    for (int i = 0; i < global->NUM_BOOKS; i++)
    {
       n[1] = (char)((int)'a'+i);
-      library->bookList[i] = newBook(library->bookList[i], n);
+      newBook(&library->bookList[i], n);
       library->bookAvailable[i] = library->bookQuantity[i] = randomInt(global->MIN_BOOK_COPIES, global->MAX_BOOK_COPIES);
    }
    for (int i = 0; i < numSeats(); i++)
    {
       library->seatOccupied[i] = 0;
-      library->booksInSeat[i] = NULL;
+      library->numBooksInSeat[i] = 0;
    }
    library->booksInTransit = 0;
    static const char* bookShelfLineModeTranslations[] = {
@@ -166,7 +150,11 @@ struct _Book_** randomBookListFromLibrary(struct _Book_** result, int n)
    assert (n >= 1 && n < global->NUM_BOOKS);
 
    if (result == NULL)
+   {
       result = (struct _Book_**)shmAlloc((n+1)*sizeof(struct _Book_*));
+      for(int i = 0; i < n; i++)
+         result[i] = (struct _Book_*)memAlloc(totalSizeOfBook());
+   }
    for(int i = 0; i < n; i++)
    {
       int exists;
@@ -176,10 +164,10 @@ struct _Book_** randomBookListFromLibrary(struct _Book_** result, int n)
          idx = randomInt(0,global->NUM_BOOKS-1);
          exists = 0;
          for(int j = 0; !exists && j < i; j++)
-            exists = (result[j] == library->bookList[idx]);
+            exists = equalBook(result[j], &library->bookList[idx]);
       }
       while(exists);
-      result[i] = library->bookList[idx];
+      *(result[i]) = library->bookList[idx];
    }
    result[n] = NULL;
    return result;
@@ -221,7 +209,7 @@ int booksInSeat(int pos)
    assert (validSeatPosition(pos));
 
    int res;
-   res = library->booksInSeat[pos] != NULL;
+   res = library->numBooksInSeat[pos] > 0;
    return res;
 }
 
@@ -236,7 +224,11 @@ int sit(struct _Book_** books)
    int res;
    res = getRandomSeat();
    library->seatOccupied[res] = 1;
-   library->booksInSeat[res] = books;
+   for(int i = 0; books[i] != NULL; i++)
+   {
+      library->booksInSeat[res][i] = *(books[i]);
+      library->numBooksInSeat[res]++;
+   }
    library->booksInTransit -= bookListLength(books);
    sendLog(library->logIdTables, toStringTables());
 
@@ -265,8 +257,12 @@ void collectBooksLibrary(int pos)
    assert (validSeatPosition(pos));
    assert (booksInSeat(pos));
 
-   returnBooks(library->booksInSeat[pos]);
-   library->booksInSeat[pos] = NULL;
+   struct _Book_**books = (struct _Book_**)alloca(sizeof(struct _Book_*)*(library->numBooksInSeat[pos]+1));
+   for(int i = 0; i < library->numBooksInSeat[pos]; i++)
+      books[i] = &library->booksInSeat[pos][i];
+   books[library->numBooksInSeat[pos]] = NULL;
+   returnBooks(books);
+   library->numBooksInSeat[pos] = 0;
    sendLog(library->logIdTables, toStringTables());
 
    invariantLibrary();
@@ -292,17 +288,7 @@ static void invariantLibrary()
       dynamicBooks += library->bookAvailable[i];
    }
    for (int i = 0; i < numSeats(); i++)
-   {
-      struct _Book_** books = library->booksInSeat[i];
-      if (library->booksInSeat[i] != NULL)
-      {
-         while(*books != NULL)
-         {
-            dynamicBooks++;
-            books++;
-         }
-      }
-   }
+      dynamicBooks += library->numBooksInSeat[i];
 
    if (lineMode())
    {
@@ -381,7 +367,7 @@ static char* toStringBookShelfs()
    res = concat_string_in_stack(res, BOX_VERTICAL);
    for(int i = 0; i < half; i++)
    {
-      res = concat_string_in_stack(res, nameBook(library->bookList[i]));
+      res = concat_string_in_stack(res, nameBook(&library->bookList[i]));
       res = concat_string_in_stack(res, ":");
       res = concat_string_in_stack(res, intToString((char*)alloca(3), library->bookAvailable[i], 2));
       res = concat_string_in_stack(res, BOX_VERTICAL);
@@ -412,7 +398,7 @@ static char* toStringBookShelfs()
    res = concat_string_in_stack(res, BOX_VERTICAL);
    for(int i = half; i < global->NUM_BOOKS; i++)
    {
-      res = concat_string_in_stack(res, nameBook(library->bookList[i]));
+      res = concat_string_in_stack(res, nameBook(&library->bookList[i]));
       res = concat_string_in_stack(res, ":");
       res = concat_string_in_stack(res, intToString((char*)alloca(3), library->bookAvailable[i], 2));
       res = concat_string_in_stack(res, BOX_VERTICAL);
@@ -566,7 +552,7 @@ static int lengthAllTables()
 static int bookSearch(struct _Book_* book)
 {
    int res;
-   for(res = 0; res < global->NUM_BOOKS && book != library->bookList[res]; res++)
+   for(res = 0; res < global->NUM_BOOKS && !equalBook(book, &library->bookList[res]); res++)
       ;
 
    return res;
