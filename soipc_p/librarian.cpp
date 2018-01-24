@@ -155,8 +155,17 @@ static int aliveLibrarian()
    /** TODO:
     * 1: librarian should be alive until a request for termination and an empty reqQueue
     **/
+   /*
    life();
    return 0;
+   */
+   if(not(alive) and emptyQueue(reqQueue))
+   {
+      return 0;
+   }
+   else{
+      return 1;
+   }
 }
 
 static void sleep()
@@ -206,6 +215,23 @@ static void handleRequests()
     * 4. use function handleRequest to handle a single request.
     * 5. Don't forget to spend time randomly in interval [global->MIN_HANDLE_REQUEST_TIME_UNITS, global->MAX_HANDLE_REQUEST_TIME_UNITS]
     **/
+   int n = randomInt(global->MIN_REQUESTS_PER_PERIOD, global->MAX_REQUESTS_PER_PERIOD);
+   int i = 0;
+   while(i<n)
+   {
+      Request* req = (Request*) outQueue(pendingRequests);
+      if(req->id == REQ_TERMINATION)
+      {
+         break;
+      }
+      inQueue(reqQueue, req);
+      free(req);
+      i++;
+   }
+   Request* req = (Request*) outQueue(reqQueue);
+   handleRequest(req);
+   free(req);
+   spend(randomInt(global->MIN_HANDLE_REQUEST_TIME_UNITS, global->MAX_HANDLE_REQUEST_TIME_UNITS));
 }
 
 static void collectBooks()
@@ -215,6 +241,24 @@ static void collectBooks()
     * 2. check of pending requests can be attended (in order)
     * 3. Don't forget to spend time randomly in interval [global->MIN_HANDLE_REQUEST_TIME_UNITS, global->MAX_HANDLE_REQUEST_TIME_UNITS]
     **/
+   for(int seatNum = 0; seatNum < numSeats(); seatNum++)
+   {
+      if(not(seatOccupied(seatNum)) and booksInSeat(seatNum))
+      {
+         collectBooksLibrary(seatNum); 
+      }
+   }
+   for(int i = 0; i < sizeQueue(pendingRequests); i++)
+   {
+      Request* req = (Request*) outQueue(pendingRequests);
+      if(req->id == REQ_COLLECT_BOOKS)
+      {
+         handleRequest(req);
+      }
+      free(req);
+   }
+
+   spend(randomInt(global->MIN_HANDLE_REQUEST_TIME_UNITS, global->MAX_HANDLE_REQUEST_TIME_UNITS));
 }
 
 static void handleRequest(Request* req)
@@ -231,16 +275,28 @@ static void handleRequest(Request* req)
    switch(req->id)
    {
       case REQ_TERMINATION:
+         alive = false;
          break;
       case REQ_COLLECT_BOOKS:
+         collectBooks();
          break;
       case REQ_ENROLL_STUDENT:
+         enrolledStudents++;
          break;
       case REQ_DISENROLL_STUDENT:
+         enrolledStudents--;
          break;
       default: // book requisition
+         requisiteBooksFromLibrary(req->books);
          break;
    }
+   for(int i = 0; i < sizeQueue(pendingRequests); i++)
+   {
+      Request* req = (Request*) outQueue(pendingRequests);
+      inQueue(reqQueue, req);
+      free(req);
+   }
+   spend(randomInt(global->MIN_HANDLE_REQUEST_TIME_UNITS, global->MAX_HANDLE_REQUEST_TIME_UNITS));
 }
 
 static void fun()
@@ -277,7 +333,8 @@ void reqEnrollStudent()
     * 2: does not wait for response.
     **/
    Request* newStudent = newEnrollStudentRequest();
-   handleRequest(newStudent);
+   inQueue(reqQueue, newStudent);
+   free(newStudent);
 }
 
 void reqDisenrollStudent()
@@ -287,7 +344,8 @@ void reqDisenrollStudent()
     * 2: does not wait for response.
     **/
    Request* freeStudent = newDisenrollStudentRequest();
-   handleRequest(freeStudent);
+   inQueue(reqQueue, freeStudent);
+   free(freeStudent);
 }
 
 void reqTermination()
@@ -296,6 +354,9 @@ void reqTermination()
     * 1: queue reqQueue should be updated and a notification send to librarian active entity
     * 2: does not wait for response.
     **/
+   Request* termination = newTerminationRequest();
+   inQueue(reqQueue, termination);
+   free(termination);
 }
 
 void reqCollectBooks()
@@ -304,6 +365,9 @@ void reqCollectBooks()
     * 1: queue reqQueue should be updated and a notification send to librarian active entity
     * 2: does not wait for response.
     **/
+   Request* collect = newCollectBooksRequest();
+   inQueue(reqQueue, collect);
+   free(collect);
 }
 
 int reqBookRequisition(struct _Book_** books)
@@ -315,8 +379,10 @@ int reqBookRequisition(struct _Book_** books)
     * 2. operation fails (return 0) if for some reason the librarian is no longer alive
     * 3. waits until operation is done  (except in situation 2.)
     **/
-
-   return 0;
+   if(not(aliveLibrarian()))
+   {
+      return 0;
+   }
 }
 
 static int newId()
