@@ -155,10 +155,6 @@ static int aliveLibrarian()
    /** TODO:
     * 1: librarian should be alive until a request for termination and an empty reqQueue
     **/
-   /*
-   life();
-   return 0;
-   */
    if(not(alive) and emptyQueue(reqQueue))
    {
       return 0;
@@ -215,23 +211,44 @@ static void handleRequests()
     * 4. use function handleRequest to handle a single request.
     * 5. Don't forget to spend time randomly in interval [global->MIN_HANDLE_REQUEST_TIME_UNITS, global->MAX_HANDLE_REQUEST_TIME_UNITS]
     **/
-   int n = randomInt(global->MIN_REQUESTS_PER_PERIOD, global->MAX_REQUESTS_PER_PERIOD);
-   int i = 0;
-   while(i<n)
-   {
-      Request* req = (Request*) outQueue(pendingRequests);
-      if(req->id == REQ_TERMINATION)
+   if(alive){
+      int n = randomInt(global->MIN_REQUESTS_PER_PERIOD, global->MAX_REQUESTS_PER_PERIOD);
+      int i = 0;
+      while(i<n)
       {
-         break;
+         Request* req = (Request*) outQueue(pendingRequests);
+         if(req->id == REQ_TERMINATION)
+         {
+            handleRequest(req);
+            free(req);
+            break;
+         }
+         inQueue(reqQueue, req);
+         free(req);
+         i++;
       }
-      inQueue(reqQueue, req);
-      free(req);
-      i++;
    }
+
    Request* req = (Request*) outQueue(reqQueue);
    handleRequest(req);
    free(req);
    spend(randomInt(global->MIN_HANDLE_REQUEST_TIME_UNITS, global->MAX_HANDLE_REQUEST_TIME_UNITS));
+
+   /*
+   if(req->id == REQ_TERMINATION)
+   {
+      handleRequest(req);
+   }
+
+   else{
+      while(!emptyQueue(reqQueue)){
+         Request* req = (Request*) outQueue(reqQueue);
+         handleRequest(req);
+         free(req);
+         spend(randomInt(global->MIN_HANDLE_REQUEST_TIME_UNITS, global->MAX_HANDLE_REQUEST_TIME_UNITS));
+      }
+   }
+   */
 }
 
 static void collectBooks()
@@ -251,9 +268,9 @@ static void collectBooks()
    for(int i = 0; i < sizeQueue(pendingRequests); i++)
    {
       Request* req = (Request*) outQueue(pendingRequests);
-      if(req->id == REQ_COLLECT_BOOKS)
+      if(req->id != REQ_COLLECT_BOOKS)
       {
-         handleRequest(req);
+         inQueue(pendingRequests,req);
       }
       free(req);
    }
@@ -290,12 +307,14 @@ static void handleRequest(Request* req)
          requisiteBooksFromLibrary(req->books);
          break;
    }
+   /*
    for(int i = 0; i < sizeQueue(pendingRequests); i++)
    {
       Request* req = (Request*) outQueue(pendingRequests);
       inQueue(reqQueue, req);
       free(req);
    }
+   */
    spend(randomInt(global->MIN_HANDLE_REQUEST_TIME_UNITS, global->MAX_HANDLE_REQUEST_TIME_UNITS));
 }
 
@@ -333,7 +352,7 @@ void reqEnrollStudent()
     * 2: does not wait for response.
     **/
    Request* newStudent = newEnrollStudentRequest();
-   inQueue(reqQueue, newStudent);
+   inQueue(pendingRequests, newStudent);
    free(newStudent);
 }
 
@@ -344,7 +363,7 @@ void reqDisenrollStudent()
     * 2: does not wait for response.
     **/
    Request* freeStudent = newDisenrollStudentRequest();
-   inQueue(reqQueue, freeStudent);
+   inQueue(pendingRequests, freeStudent);
    free(freeStudent);
 }
 
@@ -355,7 +374,7 @@ void reqTermination()
     * 2: does not wait for response.
     **/
    Request* termination = newTerminationRequest();
-   inQueue(reqQueue, termination);
+   inQueue(pendingRequests, termination);
    free(termination);
 }
 
@@ -366,7 +385,7 @@ void reqCollectBooks()
     * 2: does not wait for response.
     **/
    Request* collect = newCollectBooksRequest();
-   inQueue(reqQueue, collect);
+   inQueue(pendingRequests, collect);
    free(collect);
 }
 
