@@ -9,6 +9,11 @@
 
 #include "sim-alloc.h"
 
+//Nossos Imports
+#include <fcntl.h>           /* For O_* constants */
+#include <sys/stat.h>        /* For mode constants */
+#include <mqueue.h>
+
 typedef struct _Parameters_
 {
    // library:

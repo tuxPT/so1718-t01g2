@@ -41,6 +41,8 @@ static int maxLine = 0;
 static int _lineMode_ = 0;
 static char** filterOut = (char**)memAlloc(MAX_FILTER*sizeof(char*));
 static int filterOutLength = 0;
+//Nossos static
+static int mq_id;
 
 int registerLogger(char* name, int line, int column, int numLines, int numColumns, char** lineModeTranslations)
 {
@@ -75,14 +77,15 @@ int alive()
 void initLogger()
 {
    /* TODO: change this function to your needs */
-
-
+   mq_id = mq_open("mq_logger", O_CREAT | O_RDONLY | 0600);
+   assert(mq_id != (mqd_t)-1);
 }
 
 void termLogger()
 {
    /* TODO: change this function to your needs */
-
+   int status = mq_close(mq_id);
+   assert(status == 0);
    _alive_ = 0;
 }
 
@@ -146,8 +149,13 @@ void sendLog(int logId, char* text)
    assert (validLogId(logId));
    assert (text != NULL);
 
-   Event* e = newEvent(logId, text);
-   inQueue(queue, (void*)e);
+   mq_id = mq_open("logger_logger", O_WRONLY);
+   assert(mq_id != (mqd_t)-1);
+   char* e = (char*) newEvent(logId, text);
+   int status = mq_send(mq_id, e, sizeof(*e), 0);
+   assert(status == 0);
+
+   
 }
 
 void* mainLogger(void* arg)
@@ -160,7 +168,10 @@ void* mainLogger(void* arg)
        * 1: wait for a log event (or termination)
        * 2. processEvents (if any)
        **/
-
+      char* buf = (char*) malloc(sizeof(Event));
+      int status = mq_receive(mq_id, buf, sizeof(*buf), 0);
+      assert(status == 0);
+      inQueue(queue, (void*)buf);
       processEvents();
       printf("mainLogger");
       printf("\n");
