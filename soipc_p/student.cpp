@@ -254,14 +254,37 @@ static void study(Student* student)
    {
       int n = chooseBooksToStudy(student); // (no need to understand the algorithm)
       int pos;
+      int j=0;
+      int *studyBookListToBookListIndex = (int*)calloc(n, sizeof(int));
+
+
       
-      // 1: request librarian to requisite chosen books (state: REQ_BOOKS), wait until available
+      // 1: request librarian(now strait from library) to requisite chosen books (state: REQ_BOOKS), wait until available
       student->state = REQ_BOOKS;
+      
+
+      //creates and allocs memory for list of books current studing 
+      student->studyBookList = (struct _Book_**)memAlloc((n)*sizeof(struct _Book_*));
+      for(int i = 0; i < n; i++)
+         student->studyBookList[i] = (struct _Book_*)memAlloc(totalSizeOfBook());
+      
+      //from the booklist selects a number (n) of them that aren't finished
+      for(int i = 0;i<bookListLength(student->bookList);i++)
+      {
+        if(student->studyTime[i]<minStudyBookTimeUnitsCourseUnit(student->courses[student->actualCourse],student->bookList[i]))
+        {
+          if(j<bookListLength(student->studyBookList)){
+            student->studyBookList[j]=student->studyBookList[i];
+            studyBookListToBookListIndex[j]=i;
+            j++;
+          }
+          else
+            break;
+        }
+      }
+      
       //waits for the books to be available
-      //while(!reqBookRequisition(student->bookList));
-      //librarian gives the books to the student
-      reqCollectBooks();
-      student->studyBookList=student->bookList;
+      //while(!requisiteBooksFromLibrary(student->studyBookList));
 
       // 2: request a free seat in library (state: REQ_SEAT)
       while(!seatAvailable());
@@ -281,12 +304,12 @@ static void study(Student* student)
       //    Distribute time *equally* on all books studied (regardless of being completed)
       for(int i = 0; i < bookListLength(student->studyBookList); i++)
       {
-         student->studyTime[i] += timeSpent/bookListLength(student->studyBookList);
+         student->studyTime[studyBookListToBookListIndex[i]] += timeSpent/bookListLength(student->studyBookList);
       }
 
 
       // 6: update field completionPercentage (by calling completionPercentageCourseUnit)
-      student->completionPercentage = completionPercentageCourseUnit(student->courses[student->actualCourse],student->studyBookList,student->studyTime);
+      student->completionPercentage = completionPercentageCourseUnit(student->courses[student->actualCourse],student->bookList,student->studyTime);
 
       // 7: check if completed and act accordingly
       if(student->completionPercentage==100){
@@ -305,6 +328,9 @@ static void study(Student* student)
 
       // leave books in table
       student->studyBookList = NULL;
+      free(student->studyBookList);
+
+      free(studyBookListToBookListIndex);
 
    }
    printf("\n");
