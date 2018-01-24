@@ -7,6 +7,9 @@
 #include "queue.h"
 #include "logger.h"
 
+#include <stdlib.h>
+#include <unistd.h>
+
 #define MAX_REGISTS 100
 #define MAX_FILTER 100
 
@@ -77,7 +80,8 @@ int alive()
 void initLogger()
 {
    /* TODO: change this function to your needs */
-   mq_id = mq_open("mq_logger", O_CREAT | O_RDONLY | 0600);
+	mq_id = mq_open("/.mq_logger", O_CREAT | O_RDONLY, 0660, NULL);
+	perror("Error: ");
    assert(mq_id != (mqd_t)-1);
 }
 
@@ -149,8 +153,8 @@ void sendLog(int logId, char* text)
    assert (validLogId(logId));
    assert (text != NULL);
 
-   mq_id = mq_open("logger_logger", O_WRONLY);
-   assert(mq_id != (mqd_t)-1);
+	mq_id = mq_open("/.mq_logger", O_WRONLY);
+	assert(mq_id != (mqd_t)-1);
    char* e = (char*) newEvent(logId, text);
    int status = mq_send(mq_id, e, sizeof(*e), 0);
    assert(status == 0);
@@ -162,17 +166,29 @@ void* mainLogger(void* arg)
 {
    if (!_lineMode_)
       clearConsole();
+
    while(alive())
    {
       /** TODO:
        * 1: wait for a log event (or termination)
        * 2. processEvents (if any)
        **/
+
+		// Get item from msg queue
       char* buf = (char*) malloc(sizeof(Event));
-      int status = mq_receive(mq_id, buf, sizeof(*buf), 0);
+
+		if (buf == NULL)
+			printf("MALLOC ERROR");
+
+		// struct mq_attr attr;
+
+		int status = mq_receive(mq_id, buf, sizeof(*buf), 0);
       assert(status == 0);
+
+		// Insert item in events queue
       inQueue(queue, (void*)buf);
       processEvents();
+
       printf("mainLogger");
       printf("\n");
    }
