@@ -216,39 +216,24 @@ static void handleRequests()
       int i = 0;
       while(i<n)
       {
-         Request* req = (Request*) outQueue(pendingRequests);
+         Request* req = (Request*) outQueue(reqQueue);
+         spend(randomInt(global->MIN_HANDLE_REQUEST_TIME_UNITS, global->MAX_HANDLE_REQUEST_TIME_UNITS));
+         
          if(req->id == REQ_TERMINATION)
          {
             handleRequest(req);
             free(req);
+            //free or destroy?
+            free(reqQueue);
             break;
          }
-         inQueue(reqQueue, req);
+         
+         handleRequest(req);
          free(req);
          i++;
       }
+   
    }
-
-   Request* req = (Request*) outQueue(reqQueue);
-   handleRequest(req);
-   free(req);
-   spend(randomInt(global->MIN_HANDLE_REQUEST_TIME_UNITS, global->MAX_HANDLE_REQUEST_TIME_UNITS));
-
-   /*
-   if(req->id == REQ_TERMINATION)
-   {
-      handleRequest(req);
-   }
-
-   else{
-      while(!emptyQueue(reqQueue)){
-         Request* req = (Request*) outQueue(reqQueue);
-         handleRequest(req);
-         free(req);
-         spend(randomInt(global->MIN_HANDLE_REQUEST_TIME_UNITS, global->MAX_HANDLE_REQUEST_TIME_UNITS));
-      }
-   }
-   */
 }
 
 static void collectBooks()
@@ -265,16 +250,6 @@ static void collectBooks()
          collectBooksLibrary(seatNum); 
       }
    }
-   for(int i = 0; i < sizeQueue(pendingRequests); i++)
-   {
-      Request* req = (Request*) outQueue(pendingRequests);
-      if(req->id != REQ_COLLECT_BOOKS)
-      {
-         inQueue(pendingRequests,req);
-      }
-      free(req);
-   }
-
    spend(randomInt(global->MIN_HANDLE_REQUEST_TIME_UNITS, global->MAX_HANDLE_REQUEST_TIME_UNITS));
 }
 
@@ -304,17 +279,9 @@ static void handleRequest(Request* req)
          enrolledStudents--;
          break;
       default: // book requisition
-         requisiteBooksFromLibrary(req->books);
+         //requisiteBooksFromLibrary(req->books);
          break;
    }
-   /*
-   for(int i = 0; i < sizeQueue(pendingRequests); i++)
-   {
-      Request* req = (Request*) outQueue(pendingRequests);
-      inQueue(reqQueue, req);
-      free(req);
-   }
-   */
    spend(randomInt(global->MIN_HANDLE_REQUEST_TIME_UNITS, global->MAX_HANDLE_REQUEST_TIME_UNITS));
 }
 
@@ -351,9 +318,10 @@ void reqEnrollStudent()
     * 1: queue reqQueue should be updated and a notification send to librarian active entity
     * 2: does not wait for response.
     **/
-   Request* newStudent = newEnrollStudentRequest();
-   inQueue(pendingRequests, newStudent);
-   free(newStudent);
+   if(alive){
+      Request* newStudent = newEnrollStudentRequest();
+      inQueue(reqQueue, newStudent);
+   }
 }
 
 void reqDisenrollStudent()
@@ -362,9 +330,10 @@ void reqDisenrollStudent()
     * 1: queue reqQueue should be updated and a notification send to librarian active entity
     * 2: does not wait for response.
     **/
-   Request* freeStudent = newDisenrollStudentRequest();
-   inQueue(pendingRequests, freeStudent);
-   free(freeStudent);
+   if(alive){
+      Request* freeStudent = newDisenrollStudentRequest();
+      inQueue(reqQueue, freeStudent);
+   }
 }
 
 void reqTermination()
@@ -373,9 +342,10 @@ void reqTermination()
     * 1: queue reqQueue should be updated and a notification send to librarian active entity
     * 2: does not wait for response.
     **/
-   Request* termination = newTerminationRequest();
-   inQueue(pendingRequests, termination);
-   free(termination);
+   if(alive){
+      Request* termination = newTerminationRequest();
+      inQueue(reqQueue, termination);
+   }
 }
 
 void reqCollectBooks()
@@ -384,9 +354,11 @@ void reqCollectBooks()
     * 1: queue reqQueue should be updated and a notification send to librarian active entity
     * 2: does not wait for response.
     **/
-   Request* collect = newCollectBooksRequest();
-   inQueue(pendingRequests, collect);
-   free(collect);
+   if(alive){
+      Request* collect = newCollectBooksRequest();
+      inQueue(reqQueue, collect);
+   }
+
 }
 
 int reqBookRequisition(struct _Book_** books)
@@ -394,7 +366,8 @@ int reqBookRequisition(struct _Book_** books)
    assert (books != NULL && *books != NULL);
 
    /** TODO:
-    * 1: queue reqQueue should be updated and a notification send to librarian active entity
+    * 1: queue reqQueue should be updated and +
+    a notification send to librarian active entity
     * 2. operation fails (return 0) if for some reason the librarian is no longer alive
     * 3. waits until operation is done  (except in situation 2.)
     **/

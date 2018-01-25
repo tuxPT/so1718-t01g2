@@ -13,7 +13,7 @@ void* shmAlloc(int size)
    /* TODO: change this function to your needs */
    char* fullpath = realpath("simulation-process", NULL);
    key_t key = ftok(fullpath, ++id); // same key if same arguments
-   check_error(key);
+   assert (key!=-1);
    /* creation of the SHM segment */
    int shm_id = pshmget(key, size, IPC_CREAT | 0660);
    /* mapping of SHM segment to the address space of the caller process */

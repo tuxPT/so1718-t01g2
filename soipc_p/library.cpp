@@ -25,6 +25,10 @@ typedef struct _Library_
 
 static const char* descText = "Library:";
 static Library* library = NULL;
+static sem_t* semBooks;
+static const char* semNameBooks;
+static sem_t* semSit;
+static const char* semNameSit;
 
 static void allocLibraryDataStructure();
 static void freeLibraryDataStructure();
@@ -54,6 +58,8 @@ static void allocLibraryDataStructure()
    assert (library == NULL);
 
    library = (Library*)shmAlloc(sizeof(Library));
+
+   assert (library!=NULL);
 }
 
 static void freeLibraryDataStructure()
@@ -61,7 +67,7 @@ static void freeLibraryDataStructure()
    /* TODO: change this function to your needs */
 
    assert (library != NULL);
-
+   free(library);
    library = NULL;
 }
 
@@ -103,6 +109,20 @@ void initLibrary()
    sendLog(library->logIdTables, toStringTables());
 
    invariantLibrary();
+
+   gen_random(semNameBooks,5);
+   
+   semNameBooks = "/" + semNameBooks; 
+ 
+   assert (semNameBooks != "/" && semNameBooks!= NULL );
+   semBooks = psem_open(semNameBooks,O_CREAT ,0600,1);
+
+   gen_random(semNameSit,5);
+   
+   semNameSit = "/" + semNameSit; 
+ 
+   assert (semNameSit != "/" && semNameSit!= NULL );
+   semSit = psem_open(semNameSit,O_CREAT ,0600,1);
 }
 
 void destroyLibrary()
@@ -129,6 +149,7 @@ void requisiteBooksFromLibrary(struct _Book_** books)
 {
    /* TODO: change this function to your needs */
 
+   psem_wait(semName);
    assert (books != NULL);
    assert (booksAvailableInLibrary(books));
 
@@ -141,6 +162,7 @@ void requisiteBooksFromLibrary(struct _Book_** books)
    sendLog(library->logIdBookShelf, toStringBookShelfs());
 
    invariantLibrary();
+   psem_post(semName);
 }
 
 struct _Book_** randomBookListFromLibrary(struct _Book_** result, int n)
