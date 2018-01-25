@@ -4,7 +4,7 @@
 .PHONY: all clean cleanall
 
 OBJS=utils.o queue.o timer.o sim-alloc.o global.o logger.o book.o course-unit.o library.o librarian.o student.o all-courses.o simulation.o  # if necessary add new modules
-OBJS_PROCESS=process.o
+OBJS_PROCESS=process.o thread.o
 
 CPPFLAGS=-Wall -ggdb -pthread     # if necessary add/remove options
 SYMBOLS=-DEXIT_POLICY             # -DEXCEPTION_POLICY or -DEXIT_POLICY; for ascii output: -DACSII

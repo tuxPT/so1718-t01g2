@@ -1,5 +1,5 @@
 #!/bin/bash
 
-g++ -ggdb -Wall -pthread logger.cpp test-logger.cpp utils.cpp process.cpp queue.cpp -o test-logger -lrt
+g++ -ggdb -Wall -pthread logger.cpp test-logger.cpp utils.cpp process.cpp queue.cpp thread.cpp -o test-logger -lrt
 
 

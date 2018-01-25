@@ -7,6 +7,8 @@
 #include "global.h"
 #include "logger.h"
 #include "library.h"
+#include "process.h"
+
 
 typedef struct _Library_
 {
@@ -44,6 +46,7 @@ static int lengthBookShelf();
 static int lengthTable();
 static int lengthAllTables();
 static int bookSearch(struct _Book_* book);
+void gen_random(char *s, const int len);
 
 
 int totalSizeOfLibraryDataStructure()
@@ -109,7 +112,7 @@ void initLibrary()
    sendLog(library->logIdTables, toStringTables());
 
    invariantLibrary();
-
+   /*
    gen_random(semNameBooks,5);
    
    semNameBooks = "/" + semNameBooks; 
@@ -122,7 +125,7 @@ void initLibrary()
    semNameSit = "/" + semNameSit; 
  
    assert (semNameSit != "/" && semNameSit!= NULL );
-   semSit = psem_open(semNameSit,O_CREAT ,0600,1);
+   semSit = psem_open(semNameSit,O_CREAT ,0600,1);*/
 }
 
 void destroyLibrary()
@@ -149,7 +152,7 @@ void requisiteBooksFromLibrary(struct _Book_** books)
 {
    /* TODO: change this function to your needs */
 
-   psem_wait(semName);
+   //psem_wait(semName);
    assert (books != NULL);
    assert (booksAvailableInLibrary(books));
 
@@ -162,7 +165,7 @@ void requisiteBooksFromLibrary(struct _Book_** books)
    sendLog(library->logIdBookShelf, toStringBookShelfs());
 
    invariantLibrary();
-   psem_post(semName);
+   //psem_post(semName);
 }
 
 struct _Book_** randomBookListFromLibrary(struct _Book_** result, int n)
@@ -580,3 +583,15 @@ static int bookSearch(struct _Book_* book)
    return res;
 }
 
+void gen_random(char *s, const int len) {
+    static const char alphanum[] =
+        "0123456789"
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        "abcdefghijklmnopqrstuvwxyz";
+
+    for (int i = 0; i < len; ++i) {
+        s[i] = alphanum[rand() % (sizeof(alphanum) - 1)];
+    }
+
+    s[len] = 0;
+}

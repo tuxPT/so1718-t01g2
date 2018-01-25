@@ -7,7 +7,7 @@
 #include "process.h"
 #include "utils.h"
 #include "logger.h"
-
+#include "thread.h"
 pid_t launchLogger();
 pid_t launchClient(int id);
 

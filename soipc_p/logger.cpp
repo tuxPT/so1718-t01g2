@@ -6,6 +6,11 @@
 #include "global.h"
 #include "queue.h"
 #include "logger.h"
+//nossos imports
+#include "process.h"
+#include "thread.h"
+#define ACCESS 0
+#define MESSAGE 1
 
 #define MAX_REGISTS 100
 #define MAX_FILTER 100
@@ -32,6 +37,9 @@ static void processEvents();
 static void printEvent(Event* e);
 
 /* TODO: put your code here */
+//semaforo
+static int semid_logger;
+static int shmid_logger;
 
 static Queue* queue = newQueue(NULL);
 static Regist** areas = (Regist**)memAlloc(MAX_REGISTS*sizeof(Regist*));
@@ -75,14 +83,25 @@ int alive()
 void initLogger()
 {
    /* TODO: change this function to your needs */
-
-
+   semid_logger = psemget(IPC_PRIVATE, 2, IPC_CREAT | IPC_EXCL | 0660);
+   union semun{
+      int val; /* used for SETVAL only */
+      struct semid_ds *buf; /* used for IPC_STAT and IPC_SET */
+      ushort *array; 
+   };
+   union semun arg;
+   arg.array = (ushort*) malloc(2*sizeof(ushort));
+   arg.array[ACCESS] = 1;//access semaphore
+   arg.array[MESSAGE] = 0;//message semaphore
+   psemctl(semid_logger, 0, SETALL, arg);
+   shmid_logger = pshmget(IPC_PRIVATE, sizeof(Event), IPC_CREAT | 0660);
 }
 
 void termLogger()
 {
    /* TODO: change this function to your needs */
-
+   psemctl(semid_logger, 0, IPC_RMID);
+   pshmctl(shmid_logger, IPC_RMID, NULL);
    _alive_ = 0;
 }
 
@@ -139,6 +158,21 @@ int getNumColumnsLogger(int logId)
    return res;
 }
 
+void* processMessageChannel(void* arg)
+{
+   while(alive())
+   {
+      psem_down(semid_logger,MESSAGE);
+      Event* e = (Event* )pshmat(shmid_logger, NULL, 0);
+      Event* copyEvent = (Event* )malloc(sizeof(Event));
+      memcpy(copyEvent,e,sizeof(Event));
+      inQueue(queue,copyEvent);
+      psem_up(semid_logger, ACCESS);
+   }
+   thread_exit(NULL);
+
+}
+
 void sendLog(int logId, char* text)
 {
    /* TODO: change this function to your needs */
@@ -146,25 +180,36 @@ void sendLog(int logId, char* text)
    assert (validLogId(logId));
    assert (text != NULL);
 
+   psem_down(semid_logger, ACCESS);
+   Event* copyEvent = (Event* )pshmat(shmid_logger, NULL, 0);
+   
    Event* e = newEvent(logId, text);
-   inQueue(queue, (void*)e);
+   
+   memcpy(copyEvent,e,sizeof(Event));
+   psem_up(semid_logger, MESSAGE);
+   
 }
+
 
 void* mainLogger(void* arg)
 {
    if (!_lineMode_)
       clearConsole();
+   pthread_t messageThreadId;
+   thread_create(&messageThreadId,NULL,processMessageChannel,NULL);
+
    while(alive())
    {
       /** TODO:
        * 1: wait for a log event (or termination)
        * 2. processEvents (if any)
-       **/
-
+       **
+       */
       processEvents();
       printf("mainLogger");
       printf("\n");
    }
+   thread_join(messageThreadId,NULL);
    return NULL;
 }
 
