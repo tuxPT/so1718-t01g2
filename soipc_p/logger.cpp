@@ -169,15 +169,33 @@ int getNumColumnsLogger(int logId)
 
 void* processMessageChannel(void* arg)
 {
-   while(alive())
+	// printf("PROCESS INIT: %d\n", alive());
+	while(alive())
    {
-      psem_down(semid_logger,MESSAGE);
-      Event* e = (Event* )pshmat(shmid_logger, NULL, 0);
+		// printf("ProcessMESSAGE: BEFORE SEM\n");
+      psem_down(semid_logger, MESSAGE);
+		// printf("ProcessMESSAGE: AFTER SEM\n");
+
+		Event* e = (Event* )pshmat(shmid_logger, NULL, 0);
       Event* copyEvent = (Event* )malloc(sizeof(Event));
-      memcpy(copyEvent,e,sizeof(Event));
-      inQueue(queue,copyEvent);
-      psem_up(semid_logger, ACCESS);
-   }
+
+		copyEvent->text = strdup(e->text);
+		copyEvent->logId = e->logId;
+
+		printf("*PROCESS | TEXT: %s\n", copyEvent->text);
+
+		// printf("TEXT: %s\n", e->text);
+		// printEvent();
+
+	 	inQueue(queue, copyEvent);
+		pshmdt(e);
+
+		psem_up(semid_logger, ACCESS);
+		// printf("AFTER UP\n");
+		// printf("Process: %d\n", e->logId);
+		// printEvent(e);
+		// printf("\n");
+	}
    thread_exit(NULL);
 
 }
@@ -193,10 +211,14 @@ void sendLog(int logId, char* text)
    Event* copyEvent = (Event* )pshmat(shmid_logger, NULL, 0);
 
    Event* e = newEvent(logId, text);
-   
-   memcpy(copyEvent,e,sizeof(Event));
-   psem_up(semid_logger, MESSAGE);
-   pshmdt(copyEvent);
+	
+	printf("SendLog: %d\n", e->logId);
+
+	copyEvent->text = strdup(e->text);
+	copyEvent->logId = e->logId;
+
+	printf("SENDLOG | TEXT: %s\n", copyEvent->text);
+	psem_up(semid_logger, MESSAGE);
 }
 
 
@@ -234,10 +256,14 @@ static void processEvents()
 
    while(sizeQueue(queue) > 0)
    {
-      Event* e = (Event*)outQueue(queue);
-      //remove Lines 72255
+		// printf("ProcessEVENTS BEFORE: %d\n", sizeQueue(queue));
+		Event* e = (Event*)outQueue(queue);
+		// printf("ProcessEVENTS AFTER: %d\n", sizeQueue(queue));
+
+		//remove Lines 72255
       printf("\n");
       printf(" id = %d", e->logId);
+      printf(" text = %s", e->text);
       printf("\n");
       //
       printEvent(e);
@@ -427,10 +453,9 @@ static Event* newEvent(int logId, char* text)
 
 static void destroyEvent(Event* e)
 {
-   printf("erro\n");
    if(e->text != NULL) free(e->text);
-   //free(e->text);
-   printf("erro\n");
+   // free(e->text);
+   // printf("erro\n");
    free(e);
 }
 
