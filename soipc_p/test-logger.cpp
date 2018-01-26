@@ -30,6 +30,7 @@ void my_handler(int s)
 		foo = 1;
 		printf("Caught signal %d\n", s);
 		// termLogger();
+		exit(1);
 	}
 }
 

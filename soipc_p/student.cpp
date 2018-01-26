@@ -150,7 +150,6 @@ int logIdStudent(struct _Student_* student)
 
 static void life(Student* student)
 {
-   printf("life");
    enrollUniversity(student);
    for(int c = 0; c < student->numCourses; c++)
    {
@@ -175,18 +174,20 @@ static void enrollUniversity(Student* student)
 {  
    /* TODO: student should notify librarian */
    reqEnrollStudent();
-   printf("\n");
-   printf("enrollUniversity - %s \n", student->name);
+   // printf("\n");
+   // printf("enrollUniversity - %s \n", student->name);
    //wait(&librarian);
+	sendLog(student->logId, toStringStudent(student));
 }
 
 static void unEnrollUniversity(Student* student)
 {
    /* TODO: student should notify librarian */
    reqDisenrollStudent();
-   printf("\n");
-   printf("unEnrollUniversity - %s \n", student->name);
+   // printf("\n");
+   // printf("unEnrollUniversity - %s \n", student->name);
    //signal(&librarian);
+	sendLog(student->logId, toStringStudent(student));
 }
    
 static void enrollCourse(Student* student)
@@ -207,10 +208,9 @@ static void enrollCourse(Student* student)
    // 4: initialize student relevant state;
    student->state = NORMAL;
    student->studyTime = (int*)calloc(bookListLength(student->bookList),sizeof(int));
-
-
-   printf("\n");
-   printf("enrollCourse - %s \n", student->name);
+	sendLog(student->logId, toStringStudent(student));
+	// printf("\n");
+   // printf("enrollCourse - %s \n", student->name);
 
 }
 
@@ -222,8 +222,10 @@ static void sleep(Student* student)
     **/
    student->state = SLEEPING;
    spend(randomInt(global->MIN_SLEEPING_TIME_UNITS,global->MAX_SLEEPING_TIME_UNITS));
-   printf("\n");
-   printf("sleep - %s \n", student->name);
+	sendLog(student->logId, toStringStudent(student));
+
+	// printf("\n");
+   // printf("sleep - %s \n", student->name);
 
 }
 
@@ -248,17 +250,20 @@ static void eat(Student* student, int meal) // 0: breakfast; 1: lunch; 2: dinner
          break;
    }
    spend(randomInt(global->MIN_EATING_TIME_UNITS,global->MAX_EATING_TIME_UNITS));
-   printf("\n");
-   printf("eat - %s \n", student->name);
+	sendLog(student->logId, toStringStudent(student));
+
+	// printf("\n");
+   // printf("eat - %s \n", student->name);
    
 }
 
 static void study(Student* student)
 {
    assert (student->completionPercentage == 100 || student->studyTime != NULL);
+
    if (student->completionPercentage < 100)
    {
-      int n = chooseBooksToStudy(student); // (no need to understand the algorithm)
+		int n = chooseBooksToStudy(student); // (no need to understand the algorithm)
       int pos;
       int j=0;
       int *studyBookListToBookListIndex = (int*)calloc(n, sizeof(int));
@@ -266,8 +271,8 @@ static void study(Student* student)
       char* fullpath = realpath("simulation-process", NULL);
       key_t key = ftok(fullpath, 8);
       int semid_lib = semget(key, 0, 0);
-      
-      if (semid_lib == -1)
+
+		if (semid_lib == -1)
       {
          perror("Fail creating locker semaphore");
          exit(EXIT_FAILURE);
@@ -275,14 +280,14 @@ static void study(Student* student)
       
       // 1: request librarian(now strait from library) to requisite chosen books (state: REQ_BOOKS), wait until available
       student->state = REQ_BOOKS;
-      
+		sendLog(student->logId, toStringStudent(student));
 
-      //creates and allocs memory for list of books current studing 
+		//creates and allocs memory for list of books current studing 
       student->studyBookList = (struct _Book_**)memAlloc((n)*sizeof(struct _Book_*));
       for(int i = 0; i < n; i++)
          student->studyBookList[i] = (struct _Book_*)memAlloc(totalSizeOfBook());
-      
-      //from the booklist selects a number (n) of them that aren't finished
+
+		//from the booklist selects a number (n) of them that aren't finished
       for(int i = 0;i<bookListLength(student->bookList);i++)
       {
         if(student->studyTime[i]<minStudyBookTimeUnitsCourseUnit(student->courses[student->actualCourse],student->bookList[i]))
@@ -296,8 +301,8 @@ static void study(Student* student)
             break;
         }
       }
-      
-      //waits for the books to be available
+
+		//waits for the books to be available
       while(not(booksAvailableInLibrary(student->studyBookList)));
       
       psem_down(semid_lib,REQBOOKS);
@@ -306,21 +311,22 @@ static void study(Student* student)
 
       // 2: request a free seat in library (state: REQ_SEAT)
       student->state = REQ_SEAT;
-      while(!seatAvailable());
+		sendLog(student->logId, toStringStudent(student));
 
+		while(seatAvailable() == 0);
 
       // 3: sit
       psem_down(semid_lib,SIT);
       psem_down(semid_lib,ACCESS_SIT);
       pos = sit(student->studyBookList);
       psem_up(semid_lib,ACCESS_SIT);
-
    
 
       // 4: study (state: STUDYING). Don't forget to spend time randomly in
       //    interval [global->MIN_STUDY_TIME_UNITS, global->MAX_STUDY_TIME_UNITS]
       student->state = STUDYING;
-      int timeSpent = randomInt(global->MIN_STUDY_TIME_UNITS,global->MAX_STUDY_TIME_UNITS);
+
+		int timeSpent = randomInt(global->MIN_STUDY_TIME_UNITS,global->MAX_STUDY_TIME_UNITS);
       spend(timeSpent);
 
 
@@ -358,8 +364,10 @@ static void study(Student* student)
       free(studyBookListToBookListIndex);
 
    }
-   printf("\n");
-   printf("study - %s \n", student->name);
+	sendLog(student->logId, toStringStudent(student));
+
+	// printf("\n");
+   // printf("study - %s \n", student->name);
 }
 
 static void fun(Student* student)
@@ -370,8 +378,10 @@ static void fun(Student* student)
     **/
    student->state = HAVING_FUN;
    spend(randomInt(global->MIN_FUN_TIME_UNITS,global->MAX_FUN_TIME_UNITS));
-   printf("\n");
-   printf("fun - %s \n", student->name);
+	sendLog(student->logId, toStringStudent(student));
+
+	// printf("\n");
+   // printf("fun - %s \n", student->name);
 }
 
 static void done(Student* student)
@@ -382,8 +392,10 @@ static void done(Student* student)
    
    //student = destroyStudent(student);???
    student->state = DONE;
-   printf("\n");
-   printf("done - %s \n", student->name);
+	sendLog(student->logId, toStringStudent(student));
+
+	// printf("\n");
+   // printf("done - %s \n", student->name);
 }
 
 static int courseConcluded(Student* student)

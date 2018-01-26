@@ -146,7 +146,9 @@ static void life()
       collectBooks();
       eat(2);
       fun();
+		// printf("LIBRARIAN!!!\n");
    }
+
    done();
 }
 
@@ -172,8 +174,9 @@ static void sleep()
     **/
    state = SLEEPING;
    spend(randomInt(global->MIN_SLEEPING_TIME_UNITS,global->MAX_SLEEPING_TIME_UNITS));
-   printf("\n");
-   printf("sleep - librarian");
+	sendLog(logId, toStringLibrarian());
+   // printf("\n");
+   // printf("sleep - librarian");
 }
 
 static void eat(int meal) // 0: breakfast; 1: lunch; 2: dinner
@@ -198,8 +201,10 @@ static void eat(int meal) // 0: breakfast; 1: lunch; 2: dinner
          break;
    }
    spend(randomInt(global->MIN_EATING_TIME_UNITS,global->MAX_EATING_TIME_UNITS));
-   printf("\n");
-   printf("eat - librarian");
+	sendLog(logId, toStringLibrarian());
+
+	// printf("\n");
+   // printf("eat - librarian");
 }
 
 static void handleRequests()
@@ -212,6 +217,7 @@ static void handleRequests()
     * 5. Don't forget to spend time randomly in interval [global->MIN_HANDLE_REQUEST_TIME_UNITS, global->MAX_HANDLE_REQUEST_TIME_UNITS]
     **/
    if(alive){
+		state = NORMAL;
       int n = randomInt(global->MIN_REQUESTS_PER_PERIOD, global->MAX_REQUESTS_PER_PERIOD);
       int i = 0;
       while(i<n)
@@ -236,10 +242,12 @@ static void handleRequests()
       }
    
    }
+	sendLog(logId, toStringLibrarian());
 }
 
 static void collectBooks()
 {
+	state = BOOK_COLLECT;
    /** TODO:
     * 1: traverse all seats searching for books in empty seats, collect those books and put them in library bookshelf
     * 2. check of pending requests can be attended (in order)
@@ -253,6 +261,7 @@ static void collectBooks()
       }
    }
    spend(randomInt(global->MIN_HANDLE_REQUEST_TIME_UNITS, global->MAX_HANDLE_REQUEST_TIME_UNITS));
+	sendLog(logId, toStringLibrarian());
 }
 
 static void handleRequest(Request* req)
@@ -295,8 +304,10 @@ static void fun()
     **/
    state = HAVING_FUN;
    spend(randomInt(global->MIN_FUN_TIME_UNITS,global->MAX_FUN_TIME_UNITS));
-   printf("\n");
-   printf("fun - librarian");
+	sendLog(logId, toStringLibrarian());
+
+	// printf("\n");
+   // printf("fun - librarian");
 }
 
 static void done()
@@ -305,8 +316,9 @@ static void done()
     * 1:  life of librarian is over (state: DONE).
     **/
    state = DONE;
-   printf("\n");
-   printf("done - librarian");
+	sendLog(logId, toStringLibrarian());
+	// printf("\n");
+   // printf("done - librarian");
 }
 
 int lengthLibrarian()

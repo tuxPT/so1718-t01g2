@@ -110,7 +110,7 @@ static void go()
    /* launching the librarian process */
    int librarianID;
    proc_create(&(librarianID), mainLibrarian, NULL);
-   printf("mainLibrarian Process %d launched\n", librarianID);
+   // printf("mainLibrarian Process %d launched\n", librarianID);
 
    /* launching the processes/students */
    int pid[global->NUM_STUDENTS];
@@ -118,26 +118,26 @@ static void go()
    for (i=0; i<global->NUM_STUDENTS; i++)
    {
       proc_create(&(pid[i]), mainStudent, students[i]);
-      printf("mainStudent Process %d launched\n", pid[i]);
+      // printf("mainStudent Process %d launched\n", pid[i]);
    }
 
    /* wait for processes/students to conclude */
    int status[global->NUM_STUDENTS];
-   printf("Waiting for processes to return\n");
+   // printf("Waiting for processes to return\n");
    for (i=0; i<global->NUM_STUDENTS; i++)
    {
       pwaitpid(pid[i], &status[i], 0);
-      printf("mainStudent Process %d returned\n", pid[i]);
+      // printf("mainStudent Process %d returned\n", pid[i]);
    }
    
    int statusLibrarian;
    /* wait for the librarian process to conclude*/
    pwaitpid(librarianID, &statusLibrarian, 0);
-   printf("mainLibrarian Process %d returned\n", librarianID);
+   // printf("mainLibrarian Process %d returned\n", librarianID);
 
    int statusLogger;
    pwaitpid(loggerID, &statusLogger, 0);
-   printf("mainLogger Process %d returned\n", loggerID);
+   // printf("mainLogger Process %d returned\n", loggerID);
 
 }
 
@@ -148,8 +148,8 @@ static void finish()
 {
    /* TODO: change this function to your needs */
    destroyLibrary();
-   printf("adeus");
-   printf("\n");
+   // printf("adeus");
+   // printf("\n");
 }
 
 static void initSimulation()

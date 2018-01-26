@@ -158,7 +158,10 @@ int booksAvailableInLibrary(struct _Book_** books)
    for(int i = 0; res && books[i] != NULL; i++)
       res = library->bookAvailable[bookSearch(books[i])] > 0;
 
-   return res;
+	invariantLibrary();
+	sendLog(library->logIdBookShelf, toStringBookShelfs());
+
+	return res;
 }
 
 void requisiteBooksFromLibrary(struct _Book_** books)
@@ -175,9 +178,9 @@ void requisiteBooksFromLibrary(struct _Book_** books)
       library->bookAvailable[idx]--;
       library->booksInTransit++;
    }
-   sendLog(library->logIdBookShelf, toStringBookShelfs());
+	invariantLibrary();
+	sendLog(library->logIdBookShelf, toStringBookShelfs());
 
-   invariantLibrary();
 }
 
 struct _Book_** randomBookListFromLibrary(struct _Book_** result, int n)
@@ -216,7 +219,9 @@ int validSeatPosition(int pos)
 
    int res;
    res = pos >= 0 && pos < numSeats();
-   return res;
+	invariantLibrary();
+	// sendLog(library->logIdTables, toStringTables());
+	return res;
 }
 
 int seatOccupied(int pos)
@@ -227,16 +232,25 @@ int seatOccupied(int pos)
 
    int res;
    res = library->seatOccupied[pos];
-   return res;
+	invariantLibrary();
+	sendLog(library->logIdTables, toStringTables());
+	return res;
 }
 
 int seatAvailable()
 {
    /* TODO: change this function to your needs */
+	int n = getSeat();
+	printf("!!!!!!! %d - %d", n, numSeats());
 
-   int res;
-   res = getSeat() < numSeats();
-   return res;
+	invariantLibrary();
+	sendLog(library->logIdTables, toStringTables());
+
+	if (n < numSeats())
+	{
+		return 1;
+	}
+	return 0;
 }
 
 int booksInSeat(int pos)
@@ -247,7 +261,10 @@ int booksInSeat(int pos)
 
    int res;
    res = library->numBooksInSeat[pos] > 0;
-   return res;
+
+	invariantLibrary();
+	// sendLog(library->logIdTables, toStringTables());
+	return res;
 }
 
 int sit(struct _Book_** books)
@@ -268,11 +285,10 @@ int sit(struct _Book_** books)
       library->numBooksInSeat[res]++;
    }
    library->booksInTransit -= bookListLength(books);
-   sendLog(library->logIdTables, toStringTables());
 
    invariantLibrary();
-
-   return res;
+	sendLog(library->logIdTables, toStringTables());
+	return res;
 }
 
 void rise(int pos)
@@ -285,7 +301,8 @@ void rise(int pos)
    library->seatOccupied[pos] = 0;
    sendLog(library->logIdTables, toStringTables());
 
-   invariantLibrary();
+	invariantLibrary();
+	sendLog(library->logIdTables, toStringTables());
 }
 
 void collectBooksLibrary(int pos)
@@ -303,7 +320,8 @@ void collectBooksLibrary(int pos)
    library->numBooksInSeat[pos] = 0;
    sendLog(library->logIdTables, toStringTables());
 
-   invariantLibrary();
+	invariantLibrary();
+	sendLog(library->logIdTables, toStringTables());
 }
 
 int numLinesLibrary()

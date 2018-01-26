@@ -103,7 +103,9 @@ void initLogger()
    char * path2 = realpath("logger.cpp", NULL);
    key_t key2 = ftok(path2, 1);
    free(path2);
-   shmid_logger = pshmget(key2, sizeof(Event), IPC_CREAT | IPC_EXCL | 0660);
+
+	// printf("SIZE:::::::::::::::::::%d\n", sizeof(Event) + 200);
+	shmid_logger = pshmget(key2, 216, IPC_CREAT | IPC_EXCL | 0660);
 }
 
 void termLogger()
@@ -169,32 +171,20 @@ int getNumColumnsLogger(int logId)
 
 void* processMessageChannel(void* arg)
 {
-	// printf("PROCESS INIT: %d\n", alive());
 	while(alive())
    {
-		// printf("ProcessMESSAGE: BEFORE SEM\n");
       psem_down(semid_logger, MESSAGE);
-		// printf("ProcessMESSAGE: AFTER SEM\n");
 
 		Event* e = (Event* )pshmat(shmid_logger, NULL, 0);
-      Event* copyEvent = (Event* )malloc(sizeof(Event));
+		int i = e->logId;
+		char* str = ((char*)e) + 4;
 
-		copyEvent->text = strdup(e->text);
-		copyEvent->logId = e->logId;
-
-		printf("*PROCESS | TEXT: %s\n", copyEvent->text);
-
-		// printf("TEXT: %s\n", e->text);
-		// printEvent();
+		Event* copyEvent = newEvent(e->logId, strdup(str));
 
 	 	inQueue(queue, copyEvent);
 		pshmdt(e);
 
 		psem_up(semid_logger, ACCESS);
-		// printf("AFTER UP\n");
-		// printf("Process: %d\n", e->logId);
-		// printEvent(e);
-		// printf("\n");
 	}
    thread_exit(NULL);
 
@@ -208,16 +198,14 @@ void sendLog(int logId, char* text)
    assert (text != NULL);
    
    psem_down(semid_logger, ACCESS);
-   Event* copyEvent = (Event* )pshmat(shmid_logger, NULL, 0);
+   char* memory = (char* )pshmat(shmid_logger, NULL, 0);
+	Event* ev = (Event*)memory;
 
    Event* e = newEvent(logId, text);
 	
-	printf("SendLog: %d\n", e->logId);
+	ev->logId = logId;
+	strcpy(memory+4, e->text);
 
-	copyEvent->text = strdup(e->text);
-	copyEvent->logId = e->logId;
-
-	printf("SENDLOG | TEXT: %s\n", copyEvent->text);
 	psem_up(semid_logger, MESSAGE);
 }
 
@@ -238,8 +226,6 @@ void* mainLogger(void* arg)
        */
       while(emptyQueue(queue));
       processEvents();
-      printf("mainLogger");
-      printf("\n");
    }
    thread_join(messageThreadId,NULL);
    return NULL;
@@ -256,16 +242,7 @@ static void processEvents()
 
    while(sizeQueue(queue) > 0)
    {
-		// printf("ProcessEVENTS BEFORE: %d\n", sizeQueue(queue));
-		Event* e = (Event*)outQueue(queue);
-		// printf("ProcessEVENTS AFTER: %d\n", sizeQueue(queue));
-
-		//remove Lines 72255
-      printf("\n");
-      printf(" id = %d", e->logId);
-      printf(" text = %s", e->text);
-      printf("\n");
-      //
+		Event* e = (Event*)outQueue(queue);	
       printEvent(e);
       destroyEvent(e);
    }
