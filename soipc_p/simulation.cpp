@@ -120,6 +120,7 @@ static void go()
       proc_create(&(pid[i]), mainStudent, students[i]);
       // printf("mainStudent Process %d launched\n", pid[i]);
    }
+	printf("ID: %d\n", pid[1]);
 
    /* wait for processes/students to conclude */
    int status[global->NUM_STUDENTS];

@@ -313,12 +313,15 @@ static void study(Student* student)
       student->state = REQ_SEAT;
 		sendLog(student->logId, toStringStudent(student));
 
-		while(seatAvailable() == 0);
+		while(seatAvailable() == 0);;
 
-      // 3: sit
-      psem_down(semid_lib,SIT);
-      psem_down(semid_lib,ACCESS_SIT);
-      pos = sit(student->studyBookList);
+		printf("semmmmm\n");
+		// 3: sit
+		psem_down(semid_lib, ACCESS_SIT);
+		printf("SEM1\n");
+      // psem_down(semid_lib, SIT);
+		printf("SEM2\n");
+		pos = sit(student->studyBookList);
       psem_up(semid_lib,ACCESS_SIT);
    
 
@@ -329,19 +332,22 @@ static void study(Student* student)
 		int timeSpent = randomInt(global->MIN_STUDY_TIME_UNITS,global->MAX_STUDY_TIME_UNITS);
       spend(timeSpent);
 
+		printf("SEM3\n");
 
-      // 5: use time spent to update completion of course (studyTime field).
+		// 5: use time spent to update completion of course (studyTime field).
       //    Distribute time *equally* on all books studied (regardless of being completed)
       for(int i = 0; i < bookListLength(student->studyBookList); i++)
       {
          student->studyTime[studyBookListToBookListIndex[i]] += timeSpent/bookListLength(student->studyBookList);
       }
 
+		printf("SEM4\n");
 
-      // 6: update field completionPercentage (by calling completionPercentageCourseUnit)
+		// 6: update field completionPercentage (by calling completionPercentageCourseUnit)
       student->completionPercentage = completionPercentageCourseUnit(student->courses[student->actualCourse],student->bookList,student->studyTime);
+		printf("SEM5\n");
 
-      // 7: check if completed and act accordingly
+		// 7: check if completed and act accordingly
       if(student->completionPercentage==100){
          //resets studyTime list
          free(student->studyTime);
@@ -354,12 +360,14 @@ static void study(Student* student)
          student->actualCourse=-1;
       }
       // 8: rise from the seat (study session finished)
+		// printf("RISEEEE\n");
       rise(pos);
-      psem_up(semid_lib,SIT);
+      // psem_up(semid_lib,SIT);
+		printf("SEM6\n");
 
-      // leave books in table
-      student->studyBookList = NULL;
+		// leave books in table
       free(student->studyBookList);
+      student->studyBookList = NULL;
 
       free(studyBookListToBookListIndex);
 

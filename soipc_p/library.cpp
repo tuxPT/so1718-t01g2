@@ -241,7 +241,6 @@ int seatAvailable()
 {
    /* TODO: change this function to your needs */
 	int n = getSeat();
-	printf("!!!!!!! %d - %d", n, numSeats());
 
 	invariantLibrary();
 	sendLog(library->logIdTables, toStringTables());
@@ -300,9 +299,13 @@ void rise(int pos)
 
    library->seatOccupied[pos] = 0;
    sendLog(library->logIdTables, toStringTables());
+	printf("SEM8\n");
 
 	invariantLibrary();
+	printf("SEM9\n");
+
 	sendLog(library->logIdTables, toStringTables());
+	printf("SEM 10\n");
 }
 
 void collectBooksLibrary(int pos)

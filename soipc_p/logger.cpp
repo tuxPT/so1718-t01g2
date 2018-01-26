@@ -205,6 +205,7 @@ void sendLog(int logId, char* text)
 	
 	ev->logId = logId;
 	strcpy(memory+4, e->text);
+	// pshmdt(memory);
 
 	psem_up(semid_logger, MESSAGE);
 }
