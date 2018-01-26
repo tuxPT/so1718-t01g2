@@ -10,7 +10,7 @@
 #include "process.h"
 #include "thread.h"
 #include <iostream>
-#include <csignal>
+
 using namespace std;
 #define ACCESS 0
 #define MESSAGE 1
@@ -83,12 +83,6 @@ int alive()
    return res;
 }
 
-void signalHandler( int signum ) {
-   cout << "Interrupt signal (" << signum << ") received.\n";
-   termLogger();
-   exit(signum);  
-}
-
 void initLogger()
 {
    /* TODO: change this function to your needs */
@@ -110,7 +104,6 @@ void initLogger()
    key_t key2 = ftok(path2, 1);
    free(path2);
    shmid_logger = pshmget(key2, sizeof(Event), IPC_CREAT | IPC_EXCL | 0660);
-   signal(SIGTERM, signalHandler);
 }
 
 void termLogger()

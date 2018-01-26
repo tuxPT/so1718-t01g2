@@ -8,6 +8,8 @@
 #include "utils.h"
 #include "logger.h"
 #include "thread.h"
+#include <csignal>
+
 pid_t launchLogger();
 pid_t launchClient(int id);
 
@@ -19,37 +21,67 @@ static int num_messages = DEFAULT_NUM_MESSAGES;
 static void help(char* prog);
 static void processArgs(int argc, char* argv[]);
 
+int foo = 0;
+
+void my_handler(int s)
+{
+	if (foo)
+	{
+		foo = 1;
+		printf("Caught signal %d\n", s);
+		termLogger();
+	}
+}
+
 int main(int argc, char*argv[])
 {
-   processArgs(argc, argv);
+	// Handle SIGTERM gracefully
+	struct sigaction sigIntHandler;
+
+	sigIntHandler.sa_handler = my_handler;
+	sigemptyset(&sigIntHandler.sa_mask);
+	sigIntHandler.sa_flags = 0;
+
+	sigaction(SIGINT, &sigIntHandler, NULL);
+
+	processArgs(argc, argv);
    initLogger();
+
    int* ids = (int*)alloca(sizeof(int)*num_clients);
+
    for(int i = 0; i < num_clients; i++)
    {
       char msg[1000];
       sprintf(msg, "Client %d", i+1);
       ids[i] = registerLogger(strdup(msg), 1+i, 1+i, 1, 20, NULL);
    }
+
    pid_t logger = launchLogger();
    pid_t* clients = (pid_t*)alloca(sizeof(pid_t)*num_clients);
+
    for(int i = 0; i < num_clients; i++)
       clients[i] = launchClient(ids[i]);
+
    int status;
    for(int i = 0; i < num_clients; i++)
       pwaitpid(clients[i], &status, 0);
+
    termLogger();
    pwaitpid(logger, &status, 0);
+
    return 0;
 }
 
 pid_t launchLogger()
 {
    pid_t res = pfork();
+
    if (res == 0) // child -> logger
    {
       mainLogger(NULL);
       exit(0);
    }
+
    return res;
 }
 
