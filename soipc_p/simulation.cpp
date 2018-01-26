@@ -80,6 +80,8 @@ static void go()
    /* TODO: change this function to your needs */
 
    assert (students != NULL);
+   int loggerID;
+   proc_create(&(loggerID), mainLogger, NULL);
 
    /* launching the librarian process */
    int librarianID;
@@ -108,10 +110,10 @@ static void go()
    /* wait for the librarian process to conclude*/
    pwaitpid(librarianID, &statusLibrarian, 0);
    printf("mainLibrarian Process %d returned\n", librarianID);
-   
-   void* mainLogger(void* arg);
-   mainLogger((void*) 'a');
 
+   int statusLogger;
+   pwaitpid(loggerID, &statusLogger, 0);
+   printf("mainLogger Process %d returned\n", loggerID);
 
 }
 

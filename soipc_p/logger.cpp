@@ -9,6 +9,9 @@
 //nossos imports
 #include "process.h"
 #include "thread.h"
+#include <iostream>
+#include <csignal>
+using namespace std;
 #define ACCESS 0
 #define MESSAGE 1
 
@@ -76,14 +79,23 @@ int alive()
    /* TODO: change this function to your needs */
 
    int res;
-   res = _alive_ && eventExists();
+   res = _alive_ || eventExists();
    return res;
+}
+
+void signalHandler( int signum ) {
+   cout << "Interrupt signal (" << signum << ") received.\n";
+   termLogger();
+   exit(signum);  
 }
 
 void initLogger()
 {
    /* TODO: change this function to your needs */
-   semid_logger = psemget(IPC_PRIVATE, 2, IPC_CREAT | IPC_EXCL | 0660);
+   char* path = realpath("logger.cpp", NULL);
+   key_t key = ftok(path, 0);
+   free(path);
+   semid_logger = psemget(key, 2, IPC_CREAT | IPC_EXCL | 0660);
    union semun{
       int val; /* used for SETVAL only */
       struct semid_ds *buf; /* used for IPC_STAT and IPC_SET */
@@ -94,13 +106,17 @@ void initLogger()
    arg.array[ACCESS] = 1;//access semaphore
    arg.array[MESSAGE] = 0;//message semaphore
    psemctl(semid_logger, 0, SETALL, arg);
-   shmid_logger = pshmget(IPC_PRIVATE, sizeof(Event), IPC_CREAT | 0660);
+   char * path2 = realpath("logger.cpp", NULL);
+   key_t key2 = ftok(path2, 1);
+   free(path2);
+   shmid_logger = pshmget(key2, sizeof(Event), IPC_CREAT | IPC_EXCL | 0660);
+   signal(SIGTERM, signalHandler);
 }
 
 void termLogger()
 {
    /* TODO: change this function to your needs */
-   psemctl(semid_logger, 0, IPC_RMID);
+   psemctl(semid_logger, ACCESS, IPC_RMID);
    pshmctl(shmid_logger, IPC_RMID, NULL);
    _alive_ = 0;
 }
@@ -179,15 +195,15 @@ void sendLog(int logId, char* text)
 
    assert (validLogId(logId));
    assert (text != NULL);
-
+   
    psem_down(semid_logger, ACCESS);
    Event* copyEvent = (Event* )pshmat(shmid_logger, NULL, 0);
-   
+
    Event* e = newEvent(logId, text);
    
    memcpy(copyEvent,e,sizeof(Event));
    psem_up(semid_logger, MESSAGE);
-   
+   pshmdt(copyEvent);
 }
 
 
@@ -197,7 +213,7 @@ void* mainLogger(void* arg)
       clearConsole();
    pthread_t messageThreadId;
    thread_create(&messageThreadId,NULL,processMessageChannel,NULL);
-
+   
    while(alive())
    {
       /** TODO:
@@ -205,6 +221,7 @@ void* mainLogger(void* arg)
        * 2. processEvents (if any)
        **
        */
+      while(emptyQueue(queue));
       processEvents();
       printf("mainLogger");
       printf("\n");
@@ -417,7 +434,10 @@ static Event* newEvent(int logId, char* text)
 
 static void destroyEvent(Event* e)
 {
-   free(e->text);
+   printf("erro\n");
+   if(e->text != NULL) free(e->text);
+   //free(e->text);
+   printf("erro\n");
    free(e);
 }
 
