@@ -5,17 +5,20 @@
 #include "utils.h"
 #include "process.h"
 #include <sys/types.h>
+#include "process.h"
+#include <sys/types.h>
+#include <stdio.h>
 
 static int id = 0; // ensures new SHM segment for each shmAlloc
 
 void* shmAlloc(int size)
 {
    /* TODO: change this function to your needs */
-   char* fullpath = realpath("simulation-process", NULL);
-   key_t key = ftok(fullpath, ++id); // same key if same arguments
-   assert (key!=-1);
+   //char* fullpath = realpath("simulation-process", NULL);
+   //key_t key = ftok(fullpath, ++id); // same key if same arguments
+   //assert (key!=-1);
    /* creation of the SHM segment */
-   int shm_id = pshmget(key, size, IPC_CREAT | 0660);
+   int shm_id = pshmget(IPC_PRIVATE, size, IPC_CREAT | 0660);
    /* mapping of SHM segment to the address space of the caller process */
    void* shm_addr = (void*) pshmat(shm_id, NULL, 0);
    /* ensures deletion of the SHM segment in case of fail/exit */

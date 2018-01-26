@@ -5,7 +5,10 @@
  * 
  * \author Miguel Oliveira e Silva - 2017/2018
  */
-
+//_------------------------------------------------
+#include <signal.h>
+#include <unistd.h>
+//----------------------------------------------------
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -42,8 +45,29 @@ static const char* names[] = {
   "Lidia", "Rui", NULL};
 static int* namesUsed = NULL;
 
+
+void my_handler(int s){
+   printf("Caught signal %d\n",s);
+   finish();
+   exit(1); 
+
+}
+
 int main(int argc, char* argv[])
 {
+   //-------------------------------------------------------
+   struct sigaction sigIntHandler;
+
+   sigIntHandler.sa_handler = my_handler;
+   sigemptyset(&sigIntHandler.sa_mask);
+   sigIntHandler.sa_flags = 0;
+
+   sigaction(SIGINT, &sigIntHandler, NULL);
+
+
+   //-----------------------------------------------------------
+
+
    // default parameter values:
    Parameters params = {
       // library:
@@ -123,6 +147,7 @@ static void go()
 static void finish()
 {
    /* TODO: change this function to your needs */
+   destroyLibrary();
    printf("adeus");
    printf("\n");
 }

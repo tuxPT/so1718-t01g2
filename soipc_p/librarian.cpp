@@ -216,6 +216,8 @@ static void handleRequests()
       int i = 0;
       while(i<n)
       {
+         if(emptyQueue(reqQueue))
+            break;
          Request* req = (Request*) outQueue(reqQueue);
          spend(randomInt(global->MIN_HANDLE_REQUEST_TIME_UNITS, global->MAX_HANDLE_REQUEST_TIME_UNITS));
          

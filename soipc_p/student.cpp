@@ -9,7 +9,13 @@
 #include "library.h"
 #include "librarian.h"
 #include "student.h"
+#include "process.h"
+#include <sys/types.h>
+#include <stdio.h>
 
+#define ACCESS_SIT 0
+#define SIT 1
+#define REQBOOKS 2
 
 enum State
 {
@@ -257,7 +263,15 @@ static void study(Student* student)
       int j=0;
       int *studyBookListToBookListIndex = (int*)calloc(n, sizeof(int));
 
-
+      char* fullpath = realpath("simulation-process", NULL);
+      key_t key = ftok(fullpath, 8);
+      int semid_lib = semget(key, 0, 0);
+      
+      if (semid_lib == -1)
+      {
+         perror("Fail creating locker semaphore");
+         exit(EXIT_FAILURE);
+      }
       
       // 1: request librarian(now strait from library) to requisite chosen books (state: REQ_BOOKS), wait until available
       student->state = REQ_BOOKS;
@@ -274,7 +288,7 @@ static void study(Student* student)
         if(student->studyTime[i]<minStudyBookTimeUnitsCourseUnit(student->courses[student->actualCourse],student->bookList[i]))
         {
           if(j<bookListLength(student->studyBookList)){
-            student->studyBookList[j]=student->studyBookList[i];
+            student->studyBookList[j]=student->bookList[i];
             studyBookListToBookListIndex[j]=i;
             j++;
           }
@@ -284,15 +298,25 @@ static void study(Student* student)
       }
       
       //waits for the books to be available
-      //while(!requisiteBooksFromLibrary(student->studyBookList));
+      while(not(booksAvailableInLibrary(student->studyBookList)));
+      
+      psem_down(semid_lib,REQBOOKS);
+      requisiteBooksFromLibrary(student->studyBookList);
+      psem_up(semid_lib,REQBOOKS);
 
       // 2: request a free seat in library (state: REQ_SEAT)
-      while(!seatAvailable());
       student->state = REQ_SEAT;
-      
+      while(!seatAvailable());
+
+
       // 3: sit
+      psem_down(semid_lib,SIT);
+      psem_down(semid_lib,ACCESS_SIT);
       pos = sit(student->studyBookList);
-      
+      psem_up(semid_lib,ACCESS_SIT);
+
+   
+
       // 4: study (state: STUDYING). Don't forget to spend time randomly in
       //    interval [global->MIN_STUDY_TIME_UNITS, global->MAX_STUDY_TIME_UNITS]
       student->state = STUDYING;
@@ -325,6 +349,7 @@ static void study(Student* student)
       }
       // 8: rise from the seat (study session finished)
       rise(pos);
+      psem_up(semid_lib,SIT);
 
       // leave books in table
       student->studyBookList = NULL;

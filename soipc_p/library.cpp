@@ -8,6 +8,8 @@
 #include "logger.h"
 #include "library.h"
 #include "process.h"
+#include <sys/types.h>
+#include <stdio.h>
 
 
 typedef struct _Library_
@@ -21,16 +23,18 @@ typedef struct _Library_
    int numBooksInSeat[MAX_SEATS]; // new
    int logIdBookShelf;
    int logIdTables;
+   int semid_lib;
    /* TODO: change this structure to your needs */
 
 } Library;
 
+#define ACCESS_SIT 0
+#define SIT 1
+#define REQBOOKS 2
+
 static const char* descText = "Library:";
 static Library* library = NULL;
-static sem_t* semBooks;
-static const char* semNameBooks;
-static sem_t* semSit;
-static const char* semNameSit;
+
 
 static void allocLibraryDataStructure();
 static void freeLibraryDataStructure();
@@ -70,7 +74,7 @@ static void freeLibraryDataStructure()
    /* TODO: change this function to your needs */
 
    assert (library != NULL);
-   free(library);
+
    library = NULL;
 }
 
@@ -112,26 +116,35 @@ void initLibrary()
    sendLog(library->logIdTables, toStringTables());
 
    invariantLibrary();
-   /*
-   gen_random(semNameBooks,5);
    
-   semNameBooks = "/" + semNameBooks; 
- 
-   assert (semNameBooks != "/" && semNameBooks!= NULL );
-   semBooks = psem_open(semNameBooks,O_CREAT ,0600,1);
+   char* fullpath = realpath("simulation-process", NULL);
+   key_t key = ftok(fullpath, 8);
+   library->semid_lib = psemget(key, 3, IPC_CREAT  | 0660);
+   
+   if (library->semid_lib == -1)
+   {
+      perror("Fail creating locker semaphore");
+      exit(EXIT_FAILURE);
+   }
 
-   gen_random(semNameSit,5);
-   
-   semNameSit = "/" + semNameSit; 
- 
-   assert (semNameSit != "/" && semNameSit!= NULL );
-   semSit = psem_open(semNameSit,O_CREAT ,0600,1);*/
+   union semun{
+      int val; /* used for SETVAL only */
+      struct semid_ds *buf; /* used for IPC_STAT and IPC_SET */
+      ushort *array; 
+   };
+   union semun arg;
+   arg.array = (ushort*) malloc(2*sizeof(ushort));
+   arg.array[ACCESS_SIT] = 1;//access semaphore
+   arg.array[SIT] = 5;//sit semaphore
+   arg.array[REQBOOKS] = 0;//requisit books semaphore
+   psemctl(library->semid_lib, 0, SETALL, arg);
 }
+
 
 void destroyLibrary()
 {
    /* TODO: change this function to your needs */
-
+   semctl(library->semid_lib, 0, IPC_RMID);
    freeLibraryDataStructure();
 }
 
@@ -165,7 +178,6 @@ void requisiteBooksFromLibrary(struct _Book_** books)
    sendLog(library->logIdBookShelf, toStringBookShelfs());
 
    invariantLibrary();
-   //psem_post(semName);
 }
 
 struct _Book_** randomBookListFromLibrary(struct _Book_** result, int n)
@@ -245,6 +257,7 @@ int sit(struct _Book_** books)
    assert (books != NULL);
    assert (booksExistsInLibrary(books));
    assert (seatAvailable());
+
 
    int res;
    res = getRandomSeat();
