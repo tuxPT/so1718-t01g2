@@ -13,7 +13,7 @@
 #include <sys/types.h>
 #include <stdio.h>
 
-#define ACCESS_SIT 0
+#define ACCESS_LIBRARY 0
 #define SIT 1
 #define REQBOOKS 2
 
@@ -130,7 +130,7 @@ struct _Student_* destroyStudent(struct _Student_* student)
    free(student->concludedCourses);
    if (student->alloc)
    {
-      free(student);
+     // free(student);
       student = NULL;
    }
    return student;
@@ -140,6 +140,7 @@ void* mainStudent(void* args)
 {
    Student* student = (Student*)args;
    life(student);
+   destroyStudent(student);
    return NULL;
 }
 
@@ -184,10 +185,11 @@ static void unEnrollUniversity(Student* student)
 {
    /* TODO: student should notify librarian */
    reqDisenrollStudent();
+   printf("goodbye        ------>>>%s !!!!!!!!!!!!\n",student->name);
    // printf("\n");
    // printf("unEnrollUniversity - %s \n", student->name);
    //signal(&librarian);
-	sendLog(student->logId, toStringStudent(student));
+	 sendLog(student->logId, toStringStudent(student));
 }
    
 static void enrollCourse(Student* student)
@@ -208,8 +210,8 @@ static void enrollCourse(Student* student)
    // 4: initialize student relevant state;
    student->state = NORMAL;
    student->studyTime = (int*)calloc(bookListLength(student->bookList),sizeof(int));
-	sendLog(student->logId, toStringStudent(student));
-	// printf("\n");
+	 sendLog(student->logId, toStringStudent(student));
+	 // printf("\n");
    // printf("enrollCourse - %s \n", student->name);
 
 }
@@ -222,9 +224,9 @@ static void sleep(Student* student)
     **/
    student->state = SLEEPING;
    spend(randomInt(global->MIN_SLEEPING_TIME_UNITS,global->MAX_SLEEPING_TIME_UNITS));
-	sendLog(student->logId, toStringStudent(student));
+	 sendLog(student->logId, toStringStudent(student));
 
-	// printf("\n");
+	 // printf("\n");
    // printf("sleep - %s \n", student->name);
 
 }
@@ -250,7 +252,7 @@ static void eat(Student* student, int meal) // 0: breakfast; 1: lunch; 2: dinner
          break;
    }
    spend(randomInt(global->MIN_EATING_TIME_UNITS,global->MAX_EATING_TIME_UNITS));
-	sendLog(student->logId, toStringStudent(student));
+	 sendLog(student->logId, toStringStudent(student));
 
 	// printf("\n");
    // printf("eat - %s \n", student->name);
@@ -263,7 +265,7 @@ static void study(Student* student)
 
    if (student->completionPercentage < 100)
    {
-		int n = chooseBooksToStudy(student); // (no need to understand the algorithm)
+		  int n = chooseBooksToStudy(student); // (no need to understand the algorithm)
       int pos;
       int j=0;
       int *studyBookListToBookListIndex = (int*)calloc(n, sizeof(int));
@@ -272,7 +274,7 @@ static void study(Student* student)
       key_t key = ftok(fullpath, 8);
       int semid_lib = semget(key, 0, 0);
 
-		if (semid_lib == -1)
+		  if (semid_lib == -1)
       {
          perror("Fail creating locker semaphore");
          exit(EXIT_FAILURE);
@@ -280,7 +282,7 @@ static void study(Student* student)
       
       // 1: request librarian(now strait from library) to requisite chosen books (state: REQ_BOOKS), wait until available
       student->state = REQ_BOOKS;
-		sendLog(student->logId, toStringStudent(student));
+		  sendLog(student->logId, toStringStudent(student));
 
 		//creates and allocs memory for list of books current studing 
       student->studyBookList = (struct _Book_**)memAlloc((n)*sizeof(struct _Book_*));
@@ -303,26 +305,28 @@ static void study(Student* student)
       }
 
 		//waits for the books to be available
+
       while(not(booksAvailableInLibrary(student->studyBookList)));
       
       psem_down(semid_lib,REQBOOKS);
       requisiteBooksFromLibrary(student->studyBookList);
       psem_up(semid_lib,REQBOOKS);
 
+
       // 2: request a free seat in library (state: REQ_SEAT)
       student->state = REQ_SEAT;
 		sendLog(student->logId, toStringStudent(student));
 
-		while(seatAvailable() == 0);;
+		while(seatAvailable() == 0);
 
-		printf("semmmmm\n");
+		//printf("semmmmm\n");
 		// 3: sit
-		psem_down(semid_lib, ACCESS_SIT);
-		printf("SEM1\n");
-      // psem_down(semid_lib, SIT);
-		printf("SEM2\n");
+		psem_down(semid_lib, ACCESS_LIBRARY);
+		//printf("SEM1\n");
+    //psem_down(semid_lib, SIT);
+		//printf("SEM2\n");
 		pos = sit(student->studyBookList);
-      psem_up(semid_lib,ACCESS_SIT);
+    psem_up(semid_lib,ACCESS_LIBRARY);
    
 
       // 4: study (state: STUDYING). Don't forget to spend time randomly in
@@ -332,7 +336,7 @@ static void study(Student* student)
 		int timeSpent = randomInt(global->MIN_STUDY_TIME_UNITS,global->MAX_STUDY_TIME_UNITS);
       spend(timeSpent);
 
-		printf("SEM3\n");
+		//printf("SEM3\n");
 
 		// 5: use time spent to update completion of course (studyTime field).
       //    Distribute time *equally* on all books studied (regardless of being completed)
@@ -341,19 +345,19 @@ static void study(Student* student)
          student->studyTime[studyBookListToBookListIndex[i]] += timeSpent/bookListLength(student->studyBookList);
       }
 
-		printf("SEM4\n");
+		//printf("SEM4\n");
 
 		// 6: update field completionPercentage (by calling completionPercentageCourseUnit)
       student->completionPercentage = completionPercentageCourseUnit(student->courses[student->actualCourse],student->bookList,student->studyTime);
-		printf("SEM5\n");
+		//printf("SEM5\n");
 
 		// 7: check if completed and act accordingly
-      if(student->completionPercentage==100){
+      if(student->completionPercentage>=100){
          //resets studyTime list
-         free(student->studyTime);
+         //free(student->studyTime);
          student->studyTime = NULL;
          //resets bookList
-         free(student->bookList);
+         //free(student->bookList);
          student->bookList = NULL;
 
          student->concludedCourses[student->actualCourse]= 1;
@@ -361,15 +365,18 @@ static void study(Student* student)
       }
       // 8: rise from the seat (study session finished)
 		// printf("RISEEEE\n");
-      rise(pos);
-      // psem_up(semid_lib,SIT);
-		printf("SEM6\n");
+      //rise(pos);
+     psem_up(semid_lib,SIT);
+		//printf("SEM6\n");
 
 		// leave books in table
-      free(student->studyBookList);
-      student->studyBookList = NULL;
+      if(student->studyBookList !=NULL)
+      {
+         //free(student->studyBookList);
+         student->studyBookList = NULL;
+      }
 
-      free(studyBookListToBookListIndex);
+      //free(studyBookListToBookListIndex);
 
    }
 	sendLog(student->logId, toStringStudent(student));

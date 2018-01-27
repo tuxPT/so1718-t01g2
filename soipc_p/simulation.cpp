@@ -120,7 +120,7 @@ static void go()
       proc_create(&(pid[i]), mainStudent, students[i]);
       // printf("mainStudent Process %d launched\n", pid[i]);
    }
-	printf("ID: %d\n", pid[1]);
+	//printf("ID: %d\n", pid[1]);
 
    /* wait for processes/students to conclude */
    int status[global->NUM_STUDENTS];
@@ -130,12 +130,13 @@ static void go()
       pwaitpid(pid[i], &status[i], 0);
       // printf("mainStudent Process %d returned\n", pid[i]);
    }
-   
+   printf("FIM Students----------------------------------\n");
+   reqTermination();
    int statusLibrarian;
    /* wait for the librarian process to conclude*/
    pwaitpid(librarianID, &statusLibrarian, 0);
    // printf("mainLibrarian Process %d returned\n", librarianID);
-
+   termLogger();
    int statusLogger;
    pwaitpid(loggerID, &statusLogger, 0);
    // printf("mainLogger Process %d returned\n", loggerID);
@@ -149,6 +150,7 @@ static void finish()
 {
    /* TODO: change this function to your needs */
    destroyLibrary();
+   destroyLibrarian();
    // printf("adeus");
    // printf("\n");
 }

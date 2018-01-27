@@ -8,12 +8,21 @@
 #include "book.h"
 #include "library.h"
 #include "librarian.h"
+#include "thread.h"
+#include "process.h"
 
 // used in request->id
 #define REQ_TERMINATION        -1
 #define REQ_COLLECT_BOOKS      -2
 #define REQ_ENROLL_STUDENT     -3
 #define REQ_DISENROLL_STUDENT  -4
+
+
+#define ACCESS_LIBRARY 0
+#define SIT 1
+#define REQBOOKS 2
+#define ACCESS 3
+#define MESSAGE 4
 
 typedef struct _Request_
 {
@@ -57,6 +66,8 @@ static const char* stateText[10] =
 };
 
 /* TODO: put your code here */
+static int semid_librarian;
+static int shmid_librarian;
 
 
 static const char* descText = "Librarian:";
@@ -90,6 +101,7 @@ static void fun();
 static void done();
 static int newId();
 static char* toStringLibrarian();
+void* outQueueShm(void* arg);
 
 
 void initLibrarian(int line, int column)
@@ -115,11 +127,37 @@ void initLibrarian(int line, int column)
       NULL
    };
    logId = registerLogger((char*)descText, line ,column , 4, lengthLibrarian(), (char**)translations);
+   
+   char* path = realpath("librarian.cpp", NULL);
+   key_t key = ftok(path, 16);
+   free(path);
+   semid_librarian = psemget(key, 5, IPC_CREAT | IPC_EXCL | 0660);
+   union semun{
+      int val; /* used for SETVAL only */
+      struct semid_ds *buf; /* used for IPC_STAT and IPC_SET */
+      ushort *array; 
+   };
+   union semun arg;
+   arg.array = (ushort*) malloc(2*sizeof(ushort));
+   arg.array[ACCESS] = 1;//access semaphore
+   arg.array[MESSAGE] = 0;//message semaphore
+   psemctl(semid_librarian, 0, SETALL, arg);
+
+   char * path2 = realpath("librarian.cpp", NULL);
+   key_t key2 = ftok(path2, 15);
+   free(path2);
+
+   // printf("SIZE:::::::::::::::::::%d\n", sizeof(Event) + 200);
+   shmid_librarian = pshmget(key2, 32, IPC_CREAT | IPC_EXCL | 0660);
+   
    sendLog(logId, toStringLibrarian());
 }
 
 void destroyLibrarian()
 {
+   destroyQueue(reqQueue);
+   psemctl(semid_librarian, 0, IPC_RMID);
+   pshmctl(shmid_librarian, IPC_RMID, NULL);
 }
 
 int logIdLibrarian()
@@ -129,7 +167,12 @@ int logIdLibrarian()
 
 void* mainLibrarian(void* arg)
 {
+   pthread_t messageThreadId;
+   thread_create(&messageThreadId,NULL,outQueueShm,NULL);
+
    life();
+
+   thread_join(messageThreadId,NULL);
    return NULL;
 }
 
@@ -179,6 +222,56 @@ static void sleep()
    // printf("sleep - librarian");
 }
 
+//--------------------------- Allocated memory Queue Wrapper----------------------
+//see sendLog
+void inQueueShm(Request* req)
+{
+   assert (req != NULL);
+   
+   char* path = realpath("librarian.cpp", NULL);
+   key_t key = ftok(path, 16);
+   int semid_librarian = semget(key, 0, 0);
+
+
+   psem_down(semid_librarian, ACCESS);
+
+   char* memory = (char* )pshmat(shmid_librarian, NULL, 0);
+   Request* r = (Request*)memory;
+
+   r->books=NULL;
+   r->id=req->id;
+   r->requisited=req->requisited;
+
+   psem_up(semid_librarian, MESSAGE);
+}
+
+
+//see processMessageChannel
+void* outQueueShm(void* arg)
+{
+   while(aliveLibrarian())
+   {
+      psem_down(semid_librarian, MESSAGE);
+
+      Request* r = (Request* )pshmat(shmid_librarian, NULL, 0);
+      int i = r->id;
+      int j = r->requisited;
+      //char* str = ((char*)r) + 8;
+
+      Request* copyRequest = (Request*)memAlloc(sizeof(Request));
+
+      copyRequest->books = NULL;
+      copyRequest->id = r->id;
+      copyRequest->requisited = r->requisited;
+      inQueue(reqQueue, copyRequest);
+      pshmdt(r);
+      psem_up(semid_librarian, ACCESS);
+   }
+   thread_exit(NULL);
+
+}
+//-----------------------------------------------------------------------------
+
 static void eat(int meal) // 0: breakfast; 1: lunch; 2: dinner
 {
    assert (meal >= 0 && meal <= 2);
@@ -204,7 +297,7 @@ static void eat(int meal) // 0: breakfast; 1: lunch; 2: dinner
 	sendLog(logId, toStringLibrarian());
 
 	// printf("\n");
-   // printf("eat - librarian");
+   // printf("eat - librarian\n");
 }
 
 static void handleRequests()
@@ -216,30 +309,36 @@ static void handleRequests()
     * 4. use function handleRequest to handle a single request.
     * 5. Don't forget to spend time randomly in interval [global->MIN_HANDLE_REQUEST_TIME_UNITS, global->MAX_HANDLE_REQUEST_TIME_UNITS]
     **/
+   printf("%s\n", "ola");
    if(alive){
 		state = NORMAL;
       int n = randomInt(global->MIN_REQUESTS_PER_PERIOD, global->MAX_REQUESTS_PER_PERIOD);
       int i = 0;
+      //psem_down(semid_librarian, ACCESS);
       while(i<n)
       {
          if(emptyQueue(reqQueue))
             break;
+         printf("handle requests ---  %d\n", i);
          Request* req = (Request*) outQueue(reqQueue);
-         spend(randomInt(global->MIN_HANDLE_REQUEST_TIME_UNITS, global->MAX_HANDLE_REQUEST_TIME_UNITS));
          
          if(req->id == REQ_TERMINATION)
          {
+            printf("handle requests id ---  %d\n", req->id);
             handleRequest(req);
-            free(req);
-            //free or destroy?
-            free(reqQueue);
+            //free(req);
             break;
          }
          
          handleRequest(req);
-         free(req);
+
+         spend(randomInt(global->MIN_HANDLE_REQUEST_TIME_UNITS, global->MAX_HANDLE_REQUEST_TIME_UNITS));
+
+         sendLog(logId, toStringLibrarian());
+
          i++;
       }
+      //psem_up(semid_librarian, ACCESS);
    
    }
 	sendLog(logId, toStringLibrarian());
@@ -253,6 +352,20 @@ static void collectBooks()
     * 2. check of pending requests can be attended (in order)
     * 3. Don't forget to spend time randomly in interval [global->MIN_HANDLE_REQUEST_TIME_UNITS, global->MAX_HANDLE_REQUEST_TIME_UNITS]
     **/
+   char* fullpath = realpath("simulation-process", NULL);
+   key_t key = ftok(fullpath, 8);
+   int semid_lib = semget(key, 0, 0);
+
+   if (semid_lib == -1)
+   {
+      perror("Fail creating locker semaphore");
+      exit(EXIT_FAILURE);
+   }
+
+
+   psem_down(semid_lib,ACCESS_LIBRARY);
+
+
    for(int seatNum = 0; seatNum < numSeats(); seatNum++)
    {
       if(not(seatOccupied(seatNum)) and booksInSeat(seatNum))
@@ -262,6 +375,8 @@ static void collectBooks()
    }
    spend(randomInt(global->MIN_HANDLE_REQUEST_TIME_UNITS, global->MAX_HANDLE_REQUEST_TIME_UNITS));
 	sendLog(logId, toStringLibrarian());
+
+   psem_up(semid_lib,ACCESS_LIBRARY);
 }
 
 static void handleRequest(Request* req)
@@ -278,7 +393,12 @@ static void handleRequest(Request* req)
    switch(req->id)
    {
       case REQ_TERMINATION:
-         alive = false;
+         alive = 0;
+         if(not(emptyQueue(reqQueue)))
+         {
+            for(int i=0;i<sizeQueue(reqQueue);i++)
+               outQueue(reqQueue);
+         }
          break;
       case REQ_COLLECT_BOOKS:
          collectBooks();
@@ -294,6 +414,7 @@ static void handleRequest(Request* req)
          break;
    }
    spend(randomInt(global->MIN_HANDLE_REQUEST_TIME_UNITS, global->MAX_HANDLE_REQUEST_TIME_UNITS));
+   sendLog(logId, toStringLibrarian());
 }
 
 static void fun()
@@ -317,7 +438,8 @@ static void done()
     **/
    state = DONE;
 	sendLog(logId, toStringLibrarian());
-	// printf("\n");
+   //destroyLibrarian();
+	 // printf("\n");
    // printf("done - librarian");
 }
 
@@ -332,10 +454,9 @@ void reqEnrollStudent()
     * 1: queue reqQueue should be updated and a notification send to librarian active entity
     * 2: does not wait for response.
     **/
-   if(alive){
-      Request* newStudent = newEnrollStudentRequest();
-      inQueue(reqQueue, newStudent);
-   }
+   Request* newStudent = (Request*)newEnrollStudentRequest();
+   inQueueShm(newStudent);
+   sendLog(logId, toStringLibrarian());
 }
 
 void reqDisenrollStudent()
@@ -344,10 +465,9 @@ void reqDisenrollStudent()
     * 1: queue reqQueue should be updated and a notification send to librarian active entity
     * 2: does not wait for response.
     **/
-   if(alive){
-      Request* freeStudent = newDisenrollStudentRequest();
-      inQueue(reqQueue, freeStudent);
-   }
+   Request* freeStudent = (Request*)newDisenrollStudentRequest();
+   inQueueShm(freeStudent);
+   sendLog(logId, toStringLibrarian());
 }
 
 void reqTermination()
@@ -356,10 +476,9 @@ void reqTermination()
     * 1: queue reqQueue should be updated and a notification send to librarian active entity
     * 2: does not wait for response.
     **/
-   if(alive){
-      Request* termination = newTerminationRequest();
-      inQueue(reqQueue, termination);
-   }
+   Request* termination = (Request*)newTerminationRequest();
+   inQueueShm(termination);
+   sendLog(logId, toStringLibrarian());
 }
 
 void reqCollectBooks()
@@ -368,10 +487,9 @@ void reqCollectBooks()
     * 1: queue reqQueue should be updated and a notification send to librarian active entity
     * 2: does not wait for response.
     **/
-   if(alive){
-      Request* collect = newCollectBooksRequest();
-      inQueue(reqQueue, collect);
-   }
+   Request* collect = (Request*)newCollectBooksRequest();
+   inQueueShm(collect);
+   sendLog(logId, toStringLibrarian());
 
 }
 

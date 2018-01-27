@@ -24,11 +24,12 @@ typedef struct _Library_
    int logIdBookShelf;
    int logIdTables;
    int semid_lib;
+   key_t key;
    /* TODO: change this structure to your needs */
 
 } Library;
 
-#define ACCESS_SIT 0
+#define ACCESS_LIBRARY 0
 #define SIT 1
 #define REQBOOKS 2
 
@@ -134,7 +135,7 @@ void initLibrary()
    };
    union semun arg;
    arg.array = (ushort*) malloc(2*sizeof(ushort));
-   arg.array[ACCESS_SIT] = 1;//access semaphore
+   arg.array[ACCESS_LIBRARY] = 1;//access semaphore
    arg.array[SIT] = 5;//sit semaphore
    arg.array[REQBOOKS] = 0;//requisit books semaphore
    psemctl(library->semid_lib, 0, SETALL, arg);
@@ -159,18 +160,19 @@ int booksAvailableInLibrary(struct _Book_** books)
       res = library->bookAvailable[bookSearch(books[i])] > 0;
 
 	invariantLibrary();
-	sendLog(library->logIdBookShelf, toStringBookShelfs());
+	//sendLog(library->logIdBookShelf, toStringBookShelfs());
 
 	return res;
 }
 
-void requisiteBooksFromLibrary(struct _Book_** books)
+int requisiteBooksFromLibrary(struct _Book_** books)
 {
    /* TODO: change this function to your needs */
 
    //psem_wait(semName);
    assert (books != NULL);
-   assert (booksAvailableInLibrary(books));
+   if(not(booksAvailableInLibrary(books)))
+      return -1;
 
    for(int i = 0; books[i] != NULL; i++)
    {
@@ -180,6 +182,7 @@ void requisiteBooksFromLibrary(struct _Book_** books)
    }
 	invariantLibrary();
 	sendLog(library->logIdBookShelf, toStringBookShelfs());
+   return 1;
 
 }
 
@@ -219,7 +222,7 @@ int validSeatPosition(int pos)
 
    int res;
    res = pos >= 0 && pos < numSeats();
-	invariantLibrary();
+	//invariantLibrary();
 	// sendLog(library->logIdTables, toStringTables());
 	return res;
 }
@@ -232,8 +235,8 @@ int seatOccupied(int pos)
 
    int res;
    res = library->seatOccupied[pos];
-	invariantLibrary();
-	sendLog(library->logIdTables, toStringTables());
+	//invariantLibrary();
+	//sendLog(library->logIdTables, toStringTables());
 	return res;
 }
 
@@ -242,8 +245,8 @@ int seatAvailable()
    /* TODO: change this function to your needs */
 	int n = getSeat();
 
-	invariantLibrary();
-	sendLog(library->logIdTables, toStringTables());
+	//invariantLibrary();
+	//sendLog(library->logIdTables, toStringTables());
 
 	if (n < numSeats())
 	{
@@ -261,7 +264,7 @@ int booksInSeat(int pos)
    int res;
    res = library->numBooksInSeat[pos] > 0;
 
-	invariantLibrary();
+	//invariantLibrary();
 	// sendLog(library->logIdTables, toStringTables());
 	return res;
 }
@@ -299,13 +302,13 @@ void rise(int pos)
 
    library->seatOccupied[pos] = 0;
    sendLog(library->logIdTables, toStringTables());
-	printf("SEM8\n");
+	//printf("SEM8\n");
 
 	invariantLibrary();
-	printf("SEM9\n");
+	//printf("SEM9\n");
 
-	sendLog(library->logIdTables, toStringTables());
-	printf("SEM 10\n");
+	//sendLog(library->logIdTables, toStringTables());
+	//printf("SEM 10\n");
 }
 
 void collectBooksLibrary(int pos)
@@ -322,9 +325,9 @@ void collectBooksLibrary(int pos)
    returnBooks(books);
    library->numBooksInSeat[pos] = 0;
    sendLog(library->logIdTables, toStringTables());
-
+   //sendLog(library->logIdBookShelf, toStringBookShelfs());
 	invariantLibrary();
-	sendLog(library->logIdTables, toStringTables());
+	//sendLog(library->logIdTables, toStringTables());
 }
 
 int numLinesLibrary()
