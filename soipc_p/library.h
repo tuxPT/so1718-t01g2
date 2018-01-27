@@ -17,7 +17,7 @@ int numLinesLibrary();
 
 // export to librarian:
 int booksAvailableInLibrary(struct _Book_** books);
-void requisiteBooksFromLibrary(struct _Book_** books);
+int requisiteBooksFromLibrary(struct _Book_** books);
 int numSeats();
 int validSeatPosition(int pos);
 int seatOccupied(int pos);
