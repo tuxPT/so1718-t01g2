@@ -119,11 +119,11 @@ void initLibrary()
    library->logIdTables = registerLogger((char*)"Tables:", 2 ,lengthBookShelf()+2 , 6, lengthAllTables(), (char**)tablesLineModeTranslations);
    sendLog(library->logIdBookShelf, toStringBookShelfs());
    sendLog(library->logIdTables, toStringTables());
-
+   printf("2\n");
    invariantLibrary();
-   
-   library->semid_lib = psemget(library->keySemLibrary, 3, IPC_CREAT  | 0660);
-   
+   printf("3\n");
+   library->semid_lib = psemget(0x1115L, 3, IPC_CREAT  | 0660);
+   printf("2\n");
    if (library->semid_lib == -1)
    {
       perror("Fail creating locker semaphore");
@@ -140,7 +140,9 @@ void initLibrary()
    arg.array[0] = 1;//access semaphore
    arg.array[1] = 5;//sit semaphore
    arg.array[2] = 0;//requisit books semaphore
-   psemctl(library->semid_lib, 0, SETALL, arg);
+   printf("3\n");
+   semctl(library->semid_lib, 0, SETALL, arg);
+   printf("4\n");
 }
 
 
@@ -161,7 +163,7 @@ int booksAvailableInLibrary(struct _Book_** books)
    for(int i = 0; res && books[i] != NULL; i++)
       res = library->bookAvailable[bookSearch(books[i])] > 0;
 
-	invariantLibrary();
+	//invariantLibrary();
 	//sendLog(library->logIdBookShelf, toStringBookShelfs());
 
 	return res;
@@ -182,8 +184,8 @@ int requisiteBooksFromLibrary(struct _Book_** books)
       library->bookAvailable[idx]--;
       library->booksInTransit++;
    }
+   sendLog(library->logIdBookShelf, toStringBookShelfs());
 	invariantLibrary();
-	sendLog(library->logIdBookShelf, toStringBookShelfs());
    return 1;
 
 }
@@ -289,9 +291,9 @@ int sit(struct _Book_** books)
       library->numBooksInSeat[res]++;
    }
    library->booksInTransit -= bookListLength(books);
+   sendLog(library->logIdTables, toStringTables());
 
    invariantLibrary();
-	sendLog(library->logIdTables, toStringTables());
 	return res;
 }
 
@@ -306,7 +308,7 @@ void rise(int pos)
    sendLog(library->logIdTables, toStringTables());
 	//printf("SEM8\n");
 
-	//invariantLibrary();
+	invariantLibrary();
 	//printf("SEM9\n");
 
 	//sendLog(library->logIdTables, toStringTables());
@@ -329,7 +331,7 @@ void collectBooksLibrary(int pos)
    sendLog(library->logIdTables, toStringTables());
    //sendLog(library->logIdBookShelf, toStringBookShelfs());
 	invariantLibrary();
-	//sendLog(library->logIdTables, toStringTables());
+	sendLog(library->logIdTables, toStringTables());
 }
 
 int numLinesLibrary()

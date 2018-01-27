@@ -143,10 +143,10 @@ void initLibrarian(int line, int column)
    arg.array = (ushort*) malloc(2*sizeof(ushort));
    arg.array[0] = 1;//access semaphore
    arg.array[1] = 0;//message semaphore
-   psemctl(semid_librarian, 0, SETALL, arg);
+   semctl(semid_librarian, 0, SETALL, arg);
 
    // printf("SIZE:::::::::::::::::::%d\n", sizeof(Event) + 200);
-   shmid_librarian = pshmget(keyShmLibrarian, 32, IPC_CREAT | IPC_EXCL | 0660);
+   shmid_librarian = shmget(keyShmLibrarian, 32, IPC_CREAT | IPC_EXCL | 0660);
    
    sendLog(logId, toStringLibrarian());
 }
@@ -154,8 +154,8 @@ void initLibrarian(int line, int column)
 void destroyLibrarian()
 {
    destroyQueue(reqQueue);
-   psemctl(semid_librarian, 0, IPC_RMID);
-   pshmctl(shmid_librarian, IPC_RMID, NULL);
+   semctl(semid_librarian, 0, IPC_RMID);
+   shmctl(shmid_librarian, IPC_RMID, NULL);
 }
 
 int logIdLibrarian()
@@ -359,7 +359,7 @@ static void collectBooks()
 
    if (semid_lib == -1)
    {
-      perror("Fail creating locker semaphore");
+      perror("Fail creating locker semaphore Librarian -> semid_lib");
       exit(EXIT_FAILURE);
    }
 

@@ -268,14 +268,14 @@ static void study(Student* student)
 		  int n = chooseBooksToStudy(student); // (no need to understand the algorithm)
       int pos;
       int j=0;
-      int *studyBookListToBookListIndex = (int*)calloc(n, sizeof(int));
+      int *studyBookListToBookListIndex = (int*)calloc(n, sizeof(int));  
 
       const long keySemLibrary = 0x1115L;
       int semid_lib = semget(keySemLibrary, 0, 0);
 
 		  if (semid_lib == -1)
       {
-         perror("Fail creating locker semaphore");
+         perror("Fail creating locker semaphore student-Lib");
          exit(EXIT_FAILURE);
       }
       

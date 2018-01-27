@@ -172,15 +172,15 @@ static void initSimulation()
    addToFilterOut((char**)filterOutList);
 
    initLogger();
-
+   printf("1\n");
    int line = 1;
    initLibrary();
    line += numLinesLibrary();
-
+   printf("2\n");
    initLibrarian(line, 0);
-
+   printf("3\n");
    initAllCourses(global->NUM_COURSE_UNITS, line ,lengthLibrarian()+1);
-
+   printf("4\n");
    line += getNumLinesLogger(logIdLibrarian());
 
    line++;
@@ -196,6 +196,7 @@ static void initSimulation()
       students[i] = newStudent(NULL, randomString((char**)names, namesUsed, stringListLength((char**)names)), randomCourseList(), line, 0);
       line += getNumLinesLogger(logIdStudent(students[i]));
    }
+   printf("5\n");
 }
 
 /*********************************************************************/
