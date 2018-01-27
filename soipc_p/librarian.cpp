@@ -21,8 +21,8 @@
 #define ACCESS_LIBRARY 0
 #define SIT 1
 #define REQBOOKS 2
-#define ACCESS 3
-#define MESSAGE 4
+#define ACCESS 1
+#define MESSAGE 0
 
 typedef struct _Request_
 {
@@ -69,6 +69,11 @@ static const char* stateText[10] =
 static int semid_librarian;
 static int shmid_librarian;
 
+const long keySemLibrarian = 0x1111L;
+const long keyShmLibrarian = 0x1112L;
+const long keySemLogger = 0x1113L;
+const long keyShmLogger = 0x1114L;
+const long keySemLibrary = 0x1115L;
 
 static const char* descText = "Librarian:";
 
@@ -127,11 +132,8 @@ void initLibrarian(int line, int column)
       NULL
    };
    logId = registerLogger((char*)descText, line ,column , 4, lengthLibrarian(), (char**)translations);
-   
-   char* path = realpath("librarian.cpp", NULL);
-   key_t key = ftok(path, 16);
-   free(path);
-   semid_librarian = psemget(key, 5, IPC_CREAT | IPC_EXCL | 0660);
+
+   semid_librarian = psemget(keySemLibrarian, 2, IPC_CREAT | IPC_EXCL | 0660);
    union semun{
       int val; /* used for SETVAL only */
       struct semid_ds *buf; /* used for IPC_STAT and IPC_SET */
@@ -139,16 +141,12 @@ void initLibrarian(int line, int column)
    };
    union semun arg;
    arg.array = (ushort*) malloc(2*sizeof(ushort));
-   arg.array[ACCESS] = 1;//access semaphore
-   arg.array[MESSAGE] = 0;//message semaphore
+   arg.array[0] = 1;//access semaphore
+   arg.array[1] = 0;//message semaphore
    psemctl(semid_librarian, 0, SETALL, arg);
 
-   char * path2 = realpath("librarian.cpp", NULL);
-   key_t key2 = ftok(path2, 15);
-   free(path2);
-
    // printf("SIZE:::::::::::::::::::%d\n", sizeof(Event) + 200);
-   shmid_librarian = pshmget(key2, 32, IPC_CREAT | IPC_EXCL | 0660);
+   shmid_librarian = pshmget(keyShmLibrarian, 32, IPC_CREAT | IPC_EXCL | 0660);
    
    sendLog(logId, toStringLibrarian());
 }
@@ -228,13 +226,12 @@ void inQueueShm(Request* req)
 {
    assert (req != NULL);
    
-   char* path = realpath("librarian.cpp", NULL);
-   key_t key = ftok(path, 16);
-   int semid_librarian = semget(key, 0, 0);
+
+   int semid_librarian = semget(keySemLibrarian, 0, 0);
 
 
-   psem_down(semid_librarian, ACCESS);
-
+   psem_down(semid_librarian, 0);
+   printf("DOWN ACESS\n");
    char* memory = (char* )pshmat(shmid_librarian, NULL, 0);
    Request* r = (Request*)memory;
 
@@ -242,7 +239,9 @@ void inQueueShm(Request* req)
    r->id=req->id;
    r->requisited=req->requisited;
 
-   psem_up(semid_librarian, MESSAGE);
+   psem_up(semid_librarian, 1);
+   printf("UP MESSAGE\n");
+
 }
 
 
@@ -251,7 +250,8 @@ void* outQueueShm(void* arg)
 {
    while(aliveLibrarian())
    {
-      psem_down(semid_librarian, MESSAGE);
+      psem_down(semid_librarian, 1);
+      printf("DOWN MESSAGE\n");
 
       Request* r = (Request* )pshmat(shmid_librarian, NULL, 0);
       int i = r->id;
@@ -261,11 +261,13 @@ void* outQueueShm(void* arg)
       Request* copyRequest = (Request*)memAlloc(sizeof(Request));
 
       copyRequest->books = NULL;
-      copyRequest->id = r->id;
-      copyRequest->requisited = r->requisited;
+      copyRequest->id = i;
+      copyRequest->requisited = j;
       inQueue(reqQueue, copyRequest);
-      pshmdt(r);
-      psem_up(semid_librarian, ACCESS);
+      //pshmdt(r);
+      psem_up(semid_librarian, 0);
+      printf("UP ACESS\n");
+
    }
    thread_exit(NULL);
 
@@ -352,9 +354,8 @@ static void collectBooks()
     * 2. check of pending requests can be attended (in order)
     * 3. Don't forget to spend time randomly in interval [global->MIN_HANDLE_REQUEST_TIME_UNITS, global->MAX_HANDLE_REQUEST_TIME_UNITS]
     **/
-   char* fullpath = realpath("simulation-process", NULL);
-   key_t key = ftok(fullpath, 8);
-   int semid_lib = semget(key, 0, 0);
+
+   int semid_lib = semget(keySemLibrary, 0, 0);
 
    if (semid_lib == -1)
    {
@@ -363,7 +364,7 @@ static void collectBooks()
    }
 
 
-   psem_down(semid_lib,ACCESS_LIBRARY);
+   psem_down(semid_lib,0);
 
 
    for(int seatNum = 0; seatNum < numSeats(); seatNum++)
@@ -376,7 +377,7 @@ static void collectBooks()
    spend(randomInt(global->MIN_HANDLE_REQUEST_TIME_UNITS, global->MAX_HANDLE_REQUEST_TIME_UNITS));
 	sendLog(logId, toStringLibrarian());
 
-   psem_up(semid_lib,ACCESS_LIBRARY);
+   psem_up(semid_lib,0);
 }
 
 static void handleRequest(Request* req)

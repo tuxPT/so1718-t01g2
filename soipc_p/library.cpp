@@ -24,7 +24,11 @@ typedef struct _Library_
    int logIdBookShelf;
    int logIdTables;
    int semid_lib;
-   key_t key;
+   const long keySemLibrarian = 0x1111L;
+   const long keyShmLibrarian = 0x1112L;
+   const long keySemLogger = 0x1113L;
+   const long keyShmLogger = 0x1114L;
+   const long keySemLibrary = 0x1115L;
    /* TODO: change this structure to your needs */
 
 } Library;
@@ -118,9 +122,7 @@ void initLibrary()
 
    invariantLibrary();
    
-   char* fullpath = realpath("simulation-process", NULL);
-   key_t key = ftok(fullpath, 8);
-   library->semid_lib = psemget(key, 3, IPC_CREAT  | 0660);
+   library->semid_lib = psemget(library->keySemLibrary, 3, IPC_CREAT  | 0660);
    
    if (library->semid_lib == -1)
    {
@@ -135,9 +137,9 @@ void initLibrary()
    };
    union semun arg;
    arg.array = (ushort*) malloc(2*sizeof(ushort));
-   arg.array[ACCESS_LIBRARY] = 1;//access semaphore
-   arg.array[SIT] = 5;//sit semaphore
-   arg.array[REQBOOKS] = 0;//requisit books semaphore
+   arg.array[0] = 1;//access semaphore
+   arg.array[1] = 5;//sit semaphore
+   arg.array[2] = 0;//requisit books semaphore
    psemctl(library->semid_lib, 0, SETALL, arg);
 }
 
@@ -304,7 +306,7 @@ void rise(int pos)
    sendLog(library->logIdTables, toStringTables());
 	//printf("SEM8\n");
 
-	invariantLibrary();
+	//invariantLibrary();
 	//printf("SEM9\n");
 
 	//sendLog(library->logIdTables, toStringTables());

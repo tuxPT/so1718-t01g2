@@ -270,9 +270,8 @@ static void study(Student* student)
       int j=0;
       int *studyBookListToBookListIndex = (int*)calloc(n, sizeof(int));
 
-      char* fullpath = realpath("simulation-process", NULL);
-      key_t key = ftok(fullpath, 8);
-      int semid_lib = semget(key, 0, 0);
+      const long keySemLibrary = 0x1115L;
+      int semid_lib = semget(keySemLibrary, 0, 0);
 
 		  if (semid_lib == -1)
       {
@@ -299,18 +298,19 @@ static void study(Student* student)
             studyBookListToBookListIndex[j]=i;
             j++;
           }
-          else
-            break;
         }
       }
 
 		//waits for the books to be available
 
-      while(not(booksAvailableInLibrary(student->studyBookList)));
-      
-      psem_down(semid_lib,REQBOOKS);
-      requisiteBooksFromLibrary(student->studyBookList);
-      psem_up(semid_lib,REQBOOKS);
+      int done = -1;
+      do{
+        while(not(booksAvailableInLibrary(student->studyBookList)));
+        psem_down(semid_lib,2);
+        done = requisiteBooksFromLibrary(student->studyBookList);
+        psem_up(semid_lib,2);
+      }while(done<1);
+
 
 
       // 2: request a free seat in library (state: REQ_SEAT)
@@ -321,13 +321,15 @@ static void study(Student* student)
 
 		//printf("semmmmm\n");
 		// 3: sit
-		psem_down(semid_lib, ACCESS_LIBRARY);
+		psem_down(semid_lib, 0);
+    printf("%d\n",psemctl(semid_lib,0,GETVAL));
+    printf("DOWN ACCESS_LIBRARY\n");
 		//printf("SEM1\n");
     //psem_down(semid_lib, SIT);
 		//printf("SEM2\n");
 		pos = sit(student->studyBookList);
-    psem_up(semid_lib,ACCESS_LIBRARY);
-   
+    psem_up(semid_lib,0);
+    printf("UP ACCESS_LIBRARY\n");
 
       // 4: study (state: STUDYING). Don't forget to spend time randomly in
       //    interval [global->MIN_STUDY_TIME_UNITS, global->MAX_STUDY_TIME_UNITS]

@@ -44,6 +44,13 @@ static void printEvent(Event* e);
 static int semid_logger;
 static int shmid_logger;
 
+
+const long keySemLibrarian = 0x1111L;
+const long keyShmLibrarian = 0x1112L;
+const long keySemLogger = 0x1113L;
+const long keyShmLogger = 0x1114L;
+const long keySemLibrary = 0x1115L;
+
 static Queue* queue = newQueue(NULL);
 static Regist** areas = (Regist**)memAlloc(MAX_REGISTS*sizeof(Regist*));
 static int areasLength = 0;
@@ -86,10 +93,8 @@ int alive()
 void initLogger()
 {
    /* TODO: change this function to your needs */
-   char* path = realpath("logger.cpp", NULL);
-   key_t key = ftok(path, 0);
-   free(path);
-   semid_logger = psemget(key, 2, IPC_CREAT | IPC_EXCL | 0660);
+
+   semid_logger = psemget(keySemLogger, 2, IPC_CREAT | IPC_EXCL | 0660);
    union semun{
       int val; /* used for SETVAL only */
       struct semid_ds *buf; /* used for IPC_STAT and IPC_SET */
@@ -97,23 +102,21 @@ void initLogger()
    };
    union semun arg;
    arg.array = (ushort*) malloc(2*sizeof(ushort));
-   arg.array[ACCESS] = 1;//access semaphore
-   arg.array[MESSAGE] = 0;//message semaphore
+   arg.array[0] = 1;//access semaphore
+   arg.array[1] = 0;//message semaphore
    psemctl(semid_logger, 0, SETALL, arg);
-   char * path2 = realpath("logger.cpp", NULL);
-   key_t key2 = ftok(path2, 1);
-   free(path2);
+
 
 	// printf("SIZE:::::::::::::::::::%d\n", sizeof(Event) + 200);
-	shmid_logger = pshmget(key2, 216, IPC_CREAT | IPC_EXCL | 0660);
+	shmid_logger = pshmget(keyShmLogger, 216, IPC_CREAT | IPC_EXCL | 0660);
 }
 
 void termLogger()
 {
    /* TODO: change this function to your needs */
+   _alive_ = 0;
    psemctl(semid_logger, ACCESS, IPC_RMID);
    pshmctl(shmid_logger, IPC_RMID, NULL);
-   _alive_ = 0;
 }
 
 int validLogId(int logId)
@@ -173,8 +176,7 @@ void* processMessageChannel(void* arg)
 {
 	while(alive())
    {
-      psem_down(semid_logger, MESSAGE);
-
+      psem_down(semid_logger, 1);
 		Event* e = (Event* )pshmat(shmid_logger, NULL, 0);
 		int i = e->logId;
 		char* str = ((char*)e) + 4;
@@ -183,8 +185,8 @@ void* processMessageChannel(void* arg)
 
 	 	inQueue(queue, copyEvent);
 		pshmdt(e);
-
-		psem_up(semid_logger, ACCESS);
+		psem_up(semid_logger, 0);
+      //printf("UP\n");
 	}
    thread_exit(NULL);
 
@@ -196,8 +198,13 @@ void sendLog(int logId, char* text)
 
    assert (validLogId(logId));
    assert (text != NULL);
-   
-   psem_down(semid_logger, ACCESS);
+
+   int semid_logger = semget(keySemLogger, 0, 0);
+
+   printf("%l\n", keySemLogger);
+
+   psem_down(semid_logger, 0);
+   //printf("DOWN\n");
    char* memory = (char* )pshmat(shmid_logger, NULL, 0);
 	Event* ev = (Event*)memory;
 
@@ -206,8 +213,7 @@ void sendLog(int logId, char* text)
 	ev->logId = logId;
 	strcpy(memory+4, e->text);
 	// pshmdt(memory);
-
-	psem_up(semid_logger, MESSAGE);
+	psem_up(semid_logger, 1);
 }
 
 
