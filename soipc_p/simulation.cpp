@@ -45,13 +45,15 @@ static const char* names[] = {
   "Lidia", "Rui", NULL};
 static int* namesUsed = NULL;
 
-
 void my_handler(int s){
    printf("Caught signal %d\n",s);
    finish();
    exit(1); 
 
 }
+
+static int loggerID;
+
 
 int main(int argc, char* argv[])
 {
@@ -90,6 +92,7 @@ int main(int argc, char* argv[])
    getchar();
 
    initSimulation();
+   printf("AFTER init_simutlation\n");
    go();
    finish();
 
@@ -104,10 +107,9 @@ static void go()
    /* TODO: change this function to your needs */
 
    assert (students != NULL);
-   int loggerID;
-   proc_create(&(loggerID), mainLogger, NULL);
-
+   printf("yolo\n");
    /* launching the librarian process */
+   proc_create(&(loggerID), mainLogger, NULL);
    int librarianID;
    proc_create(&(librarianID), mainLibrarian, NULL);
    // printf("mainLibrarian Process %d launched\n", librarianID);
@@ -172,21 +174,23 @@ static void initSimulation()
    addToFilterOut((char**)filterOutList);
 
    initLogger();
-   printf("1\n");
    int line = 1;
+   printf("AFTER PROC CREAT\n");
    initLibrary();
+   printf("AFTER initLibrary\n");
    line += numLinesLibrary();
-   printf("2\n");
    initLibrarian(line, 0);
-   printf("3\n");
+   printf("AFTER initLibrarian\n");
    initAllCourses(global->NUM_COURSE_UNITS, line ,lengthLibrarian()+1);
-   printf("4\n");
+
    line += getNumLinesLogger(logIdLibrarian());
 
    line++;
    static const char* descText = "Students:";
    int logId = registerLogger((char*)descText, line ,0 , 1, strlen(descText), NULL);
+   printf("brefore sendLog\n");
    sendLog(logId, (char*)descText);
+   printf("AFTER sendLog\n");
 
    line++;
    students = (struct _Student_**)memAlloc(sizeof(struct _Student_*)*global->NUM_STUDENTS);
@@ -196,7 +200,7 @@ static void initSimulation()
       students[i] = newStudent(NULL, randomString((char**)names, namesUsed, stringListLength((char**)names)), randomCourseList(), line, 0);
       line += getNumLinesLogger(logIdStudent(students[i]));
    }
-   printf("5\n");
+   printf("AFTER students\n");
 }
 
 /*********************************************************************/

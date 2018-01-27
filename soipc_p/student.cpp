@@ -158,12 +158,19 @@ static void life(Student* student)
       do
       {
          sleep(student);
+         printf("%s -- %s\n ", student->name,student->state);
          eat(student, 0);
+         printf("%s -- %s\n ", student->name,student->state);
          study(student);
+         printf("%s -- %s\n ", student->name,student->state);
          eat(student, 1);
+         printf("%s -- %s\n ", student->name,student->state);
          study(student);
+         printf("%s -- %s\n ", student->name,student->state);
          eat(student, 2);
+         printf("%s -- %s\n ", student->name,student->state);
          fun(student);
+         printf("%s -- %s\n ", student->name,student->state);
       }
       while(!courseConcluded(student));
    }
@@ -280,6 +287,7 @@ static void study(Student* student)
       }
       
       // 1: request librarian(now strait from library) to requisite chosen books (state: REQ_BOOKS), wait until available
+      printf("%s -- %s\n ", student->name,student->state);
       student->state = REQ_BOOKS;
 		  sendLog(student->logId, toStringStudent(student));
 
@@ -302,7 +310,7 @@ static void study(Student* student)
       }
 
 		//waits for the books to be available
-
+      printf("%s -- %s\n ", student->name,student->state);
       int done = -1;
       do{
         while(not(booksAvailableInLibrary(student->studyBookList)));
@@ -310,31 +318,28 @@ static void study(Student* student)
         done = requisiteBooksFromLibrary(student->studyBookList);
         psem_up(semid_lib,2);
       }while(done<1);
-
+      printf("%s -- %s\n ", student->name,student->state);
 
 
       // 2: request a free seat in library (state: REQ_SEAT)
       student->state = REQ_SEAT;
 		sendLog(student->logId, toStringStudent(student));
-
+    printf("%s -- %s\n ", student->name,student->state);
 		while(seatAvailable() == 0);
 
 		//printf("semmmmm\n");
 		// 3: sit
 		psem_down(semid_lib, 0);
-    printf("%d\n",psemctl(semid_lib,0,GETVAL));
-    printf("DOWN ACCESS_LIBRARY\n");
 		//printf("SEM1\n");
     //psem_down(semid_lib, SIT);
 		//printf("SEM2\n");
 		pos = sit(student->studyBookList);
     psem_up(semid_lib,0);
-    printf("UP ACCESS_LIBRARY\n");
-
+    printf("%s -- %s\n ", student->name,student->state);
       // 4: study (state: STUDYING). Don't forget to spend time randomly in
       //    interval [global->MIN_STUDY_TIME_UNITS, global->MAX_STUDY_TIME_UNITS]
       student->state = STUDYING;
-
+    printf("%s -- %s\n ", student->name,student->state);
 		int timeSpent = randomInt(global->MIN_STUDY_TIME_UNITS,global->MAX_STUDY_TIME_UNITS);
       spend(timeSpent);
 

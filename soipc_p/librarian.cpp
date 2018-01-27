@@ -132,7 +132,6 @@ void initLibrarian(int line, int column)
       NULL
    };
    logId = registerLogger((char*)descText, line ,column , 4, lengthLibrarian(), (char**)translations);
-
    semid_librarian = psemget(keySemLibrarian, 2, IPC_CREAT | IPC_EXCL | 0660);
    union semun{
       int val; /* used for SETVAL only */
@@ -144,10 +143,8 @@ void initLibrarian(int line, int column)
    arg.array[0] = 1;//access semaphore
    arg.array[1] = 0;//message semaphore
    semctl(semid_librarian, 0, SETALL, arg);
-
    // printf("SIZE:::::::::::::::::::%d\n", sizeof(Event) + 200);
    shmid_librarian = shmget(keyShmLibrarian, 32, IPC_CREAT | IPC_EXCL | 0660);
-   
    sendLog(logId, toStringLibrarian());
 }
 
@@ -231,7 +228,6 @@ void inQueueShm(Request* req)
 
 
    psem_down(semid_librarian, 0);
-   printf("DOWN ACESS\n");
    char* memory = (char* )pshmat(shmid_librarian, NULL, 0);
    Request* r = (Request*)memory;
 
@@ -240,7 +236,6 @@ void inQueueShm(Request* req)
    r->requisited=req->requisited;
 
    psem_up(semid_librarian, 1);
-   printf("UP MESSAGE\n");
 
 }
 
@@ -251,7 +246,6 @@ void* outQueueShm(void* arg)
    while(aliveLibrarian())
    {
       psem_down(semid_librarian, 1);
-      printf("DOWN MESSAGE\n");
 
       Request* r = (Request* )pshmat(shmid_librarian, NULL, 0);
       int i = r->id;
@@ -266,7 +260,6 @@ void* outQueueShm(void* arg)
       inQueue(reqQueue, copyRequest);
       //pshmdt(r);
       psem_up(semid_librarian, 0);
-      printf("UP ACESS\n");
 
    }
    thread_exit(NULL);
@@ -311,7 +304,6 @@ static void handleRequests()
     * 4. use function handleRequest to handle a single request.
     * 5. Don't forget to spend time randomly in interval [global->MIN_HANDLE_REQUEST_TIME_UNITS, global->MAX_HANDLE_REQUEST_TIME_UNITS]
     **/
-   printf("%s\n", "ola");
    if(alive){
 		state = NORMAL;
       int n = randomInt(global->MIN_REQUESTS_PER_PERIOD, global->MAX_REQUESTS_PER_PERIOD);
@@ -321,12 +313,10 @@ static void handleRequests()
       {
          if(emptyQueue(reqQueue))
             break;
-         printf("handle requests ---  %d\n", i);
          Request* req = (Request*) outQueue(reqQueue);
          
          if(req->id == REQ_TERMINATION)
          {
-            printf("handle requests id ---  %d\n", req->id);
             handleRequest(req);
             //free(req);
             break;

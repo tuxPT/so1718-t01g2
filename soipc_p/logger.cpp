@@ -10,6 +10,9 @@
 #include "process.h"
 #include "thread.h"
 #include <iostream>
+#include <unistd.h>
+
+
 
 using namespace std;
 #define ACCESS 0
@@ -43,7 +46,8 @@ static void printEvent(Event* e);
 //semaforo
 static int semid_logger;
 static int shmid_logger;
-
+static int nrevents = 0;
+static int nreventsSend = 0;
 
 const long keySemLibrarian = 0x1111L;
 const long keyShmLibrarian = 0x1112L;
@@ -102,7 +106,7 @@ void initLogger()
    };
    union semun arg;
    arg.array = (ushort*) malloc(2*sizeof(ushort));
-   arg.array[0] = 1;//access semaphore
+   arg.array[0] = 25;//access semaphore
    arg.array[1] = 0;//message semaphore
    semctl(semid_logger, 0, SETALL, arg);
 
@@ -110,8 +114,6 @@ void initLogger()
 	// printf("SIZE:::::::::::::::::::%d\n", sizeof(Event) + 200);
 	shmid_logger = shmget(keyShmLogger, 216, IPC_CREAT | IPC_EXCL | 0660);
 
-   printf("DOWN MESSAGE init_LOGGER%d\n", semctl(semid_logger,1,GETVAL));
-   printf("DOWN ACESS init_LOGGER%d\n", semctl(semid_logger,0,GETVAL));
 }
 
 void termLogger()
@@ -180,17 +182,17 @@ void* processMessageChannel(void* arg)
 	while(alive())
    {
      psem_down(semid_logger, 1);
-      printf("DOWN MESSAGE LOGGER%d\n", semctl(semid_logger,1,GETVAL));
 		Event* e = (Event* )pshmat(shmid_logger, NULL, 0);
 		int i = e->logId;
 		char* str = ((char*)e) + 4;
 
 		Event* copyEvent = newEvent(e->logId, strdup(str));
-
-	 	inQueue(queue, copyEvent);
+      printf("Receive %d\n",nrevents);
+      printf("alive %d\n",_alive_);
+      nrevents++;
+      inQueue(queue, copyEvent);
 		pshmdt(e);
 		psem_up(semid_logger, 0);
-      printf("UP ACCESS LOGGER%d\n", semctl(semid_logger,0,GETVAL));
 	}
    thread_exit(NULL);
 
@@ -211,20 +213,20 @@ void sendLog(int logId, char* text)
    }
       
 
-   printf("%d\n", keySemLogger);
 
    psem_down(semid_logger, 0);
-   printf("DOWN ACCESS LOGGER%d\n", semctl(semid_logger,0,GETVAL));
    char* memory = (char* )pshmat(shmid_logger, NULL, 0);
 	Event* ev = (Event*)memory;
 
    Event* e = newEvent(logId, text);
 	
+   printf("Send %d\n",nreventsSend);
+   nreventsSend++;
+
 	ev->logId = logId;
 	strcpy(memory+4, e->text);
 	// pshmdt(memory);
 	psem_up(semid_logger, 1);
-   printf("UP MESSAGE LOGGER%d\n", semctl(semid_logger,1,GETVAL));
 }
 
 
@@ -232,11 +234,8 @@ void* mainLogger(void* arg)
 {
    if (!_lineMode_)
       clearConsole();
-   printf(" MESSAGE %d\n", semctl(semid_logger,1,GETVAL));
-   printf(" ACCESS %d\n", semctl(semid_logger,0,GETVAL));
    pthread_t messageThreadId;
    thread_create(&messageThreadId,NULL,processMessageChannel,NULL);
-   printf("1\n");
    while(alive())
    {
       /** TODO:
@@ -244,11 +243,8 @@ void* mainLogger(void* arg)
        * 2. processEvents (if any)
        **
        */
-      printf("2\n");
       while(emptyQueue(queue));
-      printf("3\n");
       processEvents();
-      printf("4\n");
    }
    thread_join(messageThreadId,NULL);
    return NULL;
@@ -298,7 +294,6 @@ static void printEvent(Event* e)
       char* logLine = (char*)"";
       logLine = concat_string_in_stack(logLine, areas[e->logId]->name);
       logLine = concat_string_in_stack(logLine, " ");
-
       while(*p != '\0')
       {
          printed = 0;
@@ -354,7 +349,6 @@ static void printEvent(Event* e)
          logLine++;
       for(int i = strlen(logLine)-1; logLine[i] == ' '; i++)
          logLine[i] = '\0';
-      printf("%s\n", logLine);
    }
    else
    {
@@ -368,7 +362,6 @@ static void printEvent(Event* e)
          for(end = 0; t[end] != '\0' && t[end] != '\n';end++)
             ;
          assert (t[end] == '\0' || t[end] == '\n');
-
          done = (t[end] == '\0');
          if (!done)
             t[end] = '\0';
@@ -453,9 +446,7 @@ static Event* newEvent(int logId, char* text)
 
 static void destroyEvent(Event* e)
 {
-   if(e->text != NULL) free(e->text);
-   // free(e->text);
-   // printf("erro\n");
+   free(e->text);
    free(e);
 }
 

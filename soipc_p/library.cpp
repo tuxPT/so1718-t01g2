@@ -89,7 +89,6 @@ void initLibrary()
 
    if (library == NULL)
       allocLibraryDataStructure();
-
    char n[3];
    strcpy(n, "Bx");
    for (int i = 0; i < global->NUM_BOOKS; i++)
@@ -119,11 +118,8 @@ void initLibrary()
    library->logIdTables = registerLogger((char*)"Tables:", 2 ,lengthBookShelf()+2 , 6, lengthAllTables(), (char**)tablesLineModeTranslations);
    sendLog(library->logIdBookShelf, toStringBookShelfs());
    sendLog(library->logIdTables, toStringTables());
-   printf("2\n");
    invariantLibrary();
-   printf("3\n");
    library->semid_lib = psemget(0x1115L, 3, IPC_CREAT  | 0660);
-   printf("2\n");
    if (library->semid_lib == -1)
    {
       perror("Fail creating locker semaphore");
@@ -140,9 +136,7 @@ void initLibrary()
    arg.array[0] = 1;//access semaphore
    arg.array[1] = 5;//sit semaphore
    arg.array[2] = 0;//requisit books semaphore
-   printf("3\n");
    semctl(library->semid_lib, 0, SETALL, arg);
-   printf("4\n");
 }
 
 
