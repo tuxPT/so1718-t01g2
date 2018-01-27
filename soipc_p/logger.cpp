@@ -14,6 +14,7 @@
 using namespace std;
 #define ACCESS 0
 #define MESSAGE 1
+#define REQ_TERM 0
 
 #define MAX_REGISTS 100
 #define MAX_FILTER 100
@@ -43,6 +44,8 @@ static void printEvent(Event* e);
 //semaforo
 static int semid_logger;
 static int shmid_logger;
+static pthread_mutex_t mutex_logger = PTHREAD_ERRORCHECK_MUTEX_INITIALIZER_NP;
+static pthread_cond_t cond_logger = PTHREAD_COND_INITIALIZER;
 
 static Queue* queue = newQueue(NULL);
 static Regist** areas = (Regist**)memAlloc(MAX_REGISTS*sizeof(Regist*));
@@ -79,7 +82,11 @@ int alive()
    /* TODO: change this function to your needs */
 
    int res;
-   res = _alive_ || eventExists();
+   if(psemctl(semid_logger, REQ_TERM, GETVAL) == 1)
+   {
+      _alive_ = 0;
+   }
+   res = _alive_;
    return res;
 }
 
@@ -89,7 +96,7 @@ void initLogger()
    char* path = realpath("logger.cpp", NULL);
    key_t key = ftok(path, 0);
    free(path);
-   semid_logger = psemget(key, 2, IPC_CREAT | IPC_EXCL | 0660);
+   semid_logger = psemget(key, 3, IPC_CREAT | IPC_EXCL | 0660);
    union semun{
       int val; /* used for SETVAL only */
       struct semid_ds *buf; /* used for IPC_STAT and IPC_SET */
@@ -99,6 +106,7 @@ void initLogger()
    arg.array = (ushort*) malloc(2*sizeof(ushort));
    arg.array[ACCESS] = 1;//access semaphore
    arg.array[MESSAGE] = 0;//message semaphore
+   arg.array[REQ_TERM] = 0;
    psemctl(semid_logger, 0, SETALL, arg);
    char * path2 = realpath("logger.cpp", NULL);
    key_t key2 = ftok(path2, 1);
@@ -111,9 +119,10 @@ void initLogger()
 void termLogger()
 {
    /* TODO: change this function to your needs */
-   psemctl(semid_logger, ACCESS, IPC_RMID);
+   psem_up(semid_logger, REQ_TERM);
+   while(psemctl(semid_logger, REQ_TERM, GETVAL) == 1);
+   psemctl(semid_logger, 0, IPC_RMID);
    pshmctl(shmid_logger, IPC_RMID, NULL);
-   _alive_ = 0;
 }
 
 int validLogId(int logId)
@@ -171,21 +180,31 @@ int getNumColumnsLogger(int logId)
 
 void* processMessageChannel(void* arg)
 {
+   
 	while(alive())
    {
+      //mutex_lock(&mutex_logger);
       psem_down(semid_logger, MESSAGE);
 
 		Event* e = (Event* )pshmat(shmid_logger, NULL, 0);
 		int i = e->logId;
 		char* str = ((char*)e) + 4;
+      if(i == 0 and str[0] == '\0'){
+         continue;
+      }
 
 		Event* copyEvent = newEvent(e->logId, strdup(str));
 
+      //cond_wait(&cond_logger, &mutex_logger);
 	 	inQueue(queue, copyEvent);
+      char n = '\0';
+      memcpy(e, &n, 216);
 		pshmdt(e);
 
 		psem_up(semid_logger, ACCESS);
+      //cond_broadcast(&cond_logger);
 	}
+   
    thread_exit(NULL);
 
 }
@@ -215,20 +234,28 @@ void* mainLogger(void* arg)
 {
    if (!_lineMode_)
       clearConsole();
+   
+   //mutex_init(&mutex_logger, NULL);
+   //cond_init(&cond_logger, NULL);
    pthread_t messageThreadId;
    thread_create(&messageThreadId,NULL,processMessageChannel,NULL);
    
    while(alive())
    {
+      //mutex_lock(&mutex_logger);
       /** TODO:
        * 1: wait for a log event (or termination)
-       * 2. processEvents (if any)
+       * 2. processEvents (if    any)
        **
        */
-      while(emptyQueue(queue));
+      //cond_wait(&cond_logger, &mutex_logger);
+      while(not(eventExists()));
       processEvents();
+      //cond_broadcast(&cond_logger);
    }
+   
    thread_join(messageThreadId,NULL);
+   psem_down(semid_logger, REQ_TERM);
    return NULL;
 }
 
