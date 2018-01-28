@@ -138,7 +138,7 @@ void initLibrarian(int line, int column)
       NULL
    };
    logId = registerLogger((char*)descText, line ,column , 4, lengthLibrarian(), (char**)translations);
-   semid_librarian = psemget(keySemLibrarian, 2, IPC_CREAT | IPC_EXCL | 0660);
+   semid_librarian = semget(keySemLibrarian, 2, IPC_CREAT | IPC_EXCL | 0660);
    union semun{
       int val; /* used for SETVAL only */
       struct semid_ds *buf; /* used for IPC_STAT and IPC_SET */
