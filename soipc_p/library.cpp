@@ -33,6 +33,11 @@ typedef struct _Library_
 
 } Library;
 
+#include <unistd.h>
+#include <iostream>
+using namespace std;
+#define DEBUG cout << __FILE__ << ":" << __func__<< " line:" << __LINE__ << endl
+
 #define ACCESS_LIBRARY 0
 #define SIT 1
 #define REQBOOKS 2

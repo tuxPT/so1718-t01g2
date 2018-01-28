@@ -24,6 +24,12 @@
 #define ACCESS 1
 #define MESSAGE 0
 
+#include <unistd.h>
+#include <iostream>
+using namespace std;
+#define DEBUG cout << __FILE__ << ":" << __func__<< " line:" << __LINE__ << endl
+
+
 typedef struct _Request_
 {
    struct _Book_** books;

@@ -12,9 +12,10 @@
 #include <iostream>
 #include <unistd.h>
 
-
-
 using namespace std;
+#define DEBUG cout << __FILE__ << ":" << __func__<< " line:" << __LINE__ << endl
+
+
 #define ACCESS 0
 #define MESSAGE 1
 
