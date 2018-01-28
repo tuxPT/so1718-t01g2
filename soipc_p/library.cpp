@@ -140,7 +140,7 @@ void initLibrary()
    arg.array = (ushort*) malloc(2*sizeof(ushort));
    arg.array[0] = 1;//access semaphore
    arg.array[1] = 5;//sit semaphore
-   arg.array[2] = 0;//requisit books semaphore
+   arg.array[2] = 1;//requisit books semaphore
    semctl(library->semid_lib, 0, SETALL, arg);
 }
 
@@ -168,14 +168,13 @@ int booksAvailableInLibrary(struct _Book_** books)
 	return res;
 }
 
-int requisiteBooksFromLibrary(struct _Book_** books)
+void requisiteBooksFromLibrary(struct _Book_** books)
 {
    /* TODO: change this function to your needs */
 
    //psem_wait(semName);
    assert (books != NULL);
-   if(not(booksAvailableInLibrary(books)))
-      return -1;
+   assert(booksAvailableInLibrary(books));
 
    for(int i = 0; books[i] != NULL; i++)
    {
@@ -185,7 +184,7 @@ int requisiteBooksFromLibrary(struct _Book_** books)
    }
    sendLog(library->logIdBookShelf, toStringBookShelfs());
 	invariantLibrary();
-   return 1;
+ 
 
 }
 
