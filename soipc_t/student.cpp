@@ -9,6 +9,8 @@
 #include "library.h"
 #include "librarian.h"
 #include "student.h"
+#include "thread.h"
+
 
 enum State
 {
@@ -89,8 +91,7 @@ struct _Student_* newStudent(struct _Student_* student, char* name, struct _Cour
    student->name = name;
    student->state = NONE;
    student->courses = courses;
-   for(student->numCourses = 0; courses[student->numCourses] != NULL; student->numCourses++)
-      ;
+   student->numCourses = global->NUM_COURSE_UNITS;
    student->concludedCourses = (int*)memAlloc(sizeof(int)*student->numCourses);
    student->actualCourse = -1;
    student->completionPercentage = 0;
@@ -126,6 +127,7 @@ struct _Student_* destroyStudent(struct _Student_* student)
       free(student);
       student = NULL;
    }
+   sendLog(student->logId,student->name);
    return student;
 }
 
@@ -133,6 +135,7 @@ void* mainStudent(void* args)
 {
    Student* student = (Student*)args;
    life(student);
+   destroyStudent(student);
    return NULL;
 }
 
@@ -143,6 +146,7 @@ int logIdStudent(struct _Student_* student)
 
 static void life(Student* student)
 {
+   printf("life");
    enrollUniversity(student);
    for(int c = 0; c < student->numCourses; c++)
    {
@@ -152,10 +156,13 @@ static void life(Student* student)
          sleep(student);
          eat(student, 0);
          study(student);
+         sendLog(student->logId,student->name);
          eat(student, 1);
          study(student);
+         sendLog(student->logId,student->name);
          eat(student, 2);
          fun(student);
+         sendLog(student->logId,student->name);
       }
       while(!courseConcluded(student));
    }
@@ -166,21 +173,44 @@ static void life(Student* student)
 static void enrollUniversity(Student* student)
 {
    /* TODO: student should notify librarian */
+   reqEnrollStudent();
+   printf("\n");
+   printf("enrollUniversity - %s \n", student->name);
+   //wait(&librarian);
 }
 
 static void unEnrollUniversity(Student* student)
 {
    /* TODO: student should notify librarian */
+   reqDisenrollStudent();
+   printf("\n");
+   printf("unEnrollUniversity - %s \n", student->name);
+   //signal(&librarian);
 }
 
 static void enrollCourse(Student* student)
 {
-   /** TODO:
-    * 1: set the student state;
-    * 2: choose a random non-concluded course;
-    * 3: get booklist from course;
-    * 4: initialize student relevant state
-    **/
+   // 1: set the student state;
+   student->state = NONE;
+
+   // 2: choose a random non-concluded course;
+   int newCourse;
+   do{
+      newCourse = randomInt(0,student->numCourses-1);
+   }while(student->concludedCourses[newCourse]!=0);
+   student->actualCourse = newCourse;
+
+   // 3: get booklist from course;
+   student->bookList = bookListCourseUnit(student->courses[student->actualCourse]);
+
+   // 4: initialize student relevant state;
+   student->state = NORMAL;
+   student->studyTime = (int*)calloc(bookListLength(student->bookList),sizeof(int));
+
+
+   printf("\n");
+   printf("enrollCourse - %s \n", student->name);
+
 }
 
 static void sleep(Student* student)
@@ -189,6 +219,11 @@ static void sleep(Student* student)
     * 1: sleep (state: SLEEPING). Don't forget to spend time randomly in
     *    interval [global->MIN_SLEEPING_TIME_UNITS, global->MAX_SLEEPING_TIME_UNITS]
     **/
+   student->state = SLEEPING;
+   spend(randomInt(global->MIN_SLEEPING_TIME_UNITS,global->MAX_SLEEPING_TIME_UNITS));
+   printf("\n");
+   printf("sleep - %s \n", student->name);
+
 }
 
 static void eat(Student* student, int meal) // 0: breakfast; 1: lunch; 2: dinner
@@ -199,32 +234,100 @@ static void eat(Student* student, int meal) // 0: breakfast; 1: lunch; 2: dinner
     * 1: eat (state: BREAKFAST or LUNCH or DINNER). Don't forget to spend time randomly in
     *    interval [global->MIN_EATING_TIME_UNITS, global->MAX_EATING_TIME_UNITS]
     **/
+   switch(meal)
+   {
+      case 0:
+         student->state = BREAKFAST;
+         break;
+      case 1:
+         student->state = LUNCH;
+         break;
+      case 2:
+         student->state = DINNER;
+         break;
+   }
+   spend(randomInt(global->MIN_EATING_TIME_UNITS,global->MAX_EATING_TIME_UNITS));
+   printf("\n");
+   printf("eat - %s \n", student->name);
+
 }
 
 static void study(Student* student)
 {
    assert (student->completionPercentage == 100 || student->studyTime != NULL);
-
    if (student->completionPercentage < 100)
    {
       int n = chooseBooksToStudy(student); // (no need to understand the algorithm)
+      int pos;
 
-      /** TODO:
-       * 1: request librarian to requisite chosen books (state: REQ_BOOKS), wait until available
-       * 2: request a free seat in library (state: REQ_SEAT)
-       * 3: sit
-       * 4: study (state: STUDYING). Don't forget to spend time randomly in
-       *    interval [global->MIN_STUDY_TIME_UNITS, global->MAX_STUDY_TIME_UNITS]
-       * 5: use time spent to update completion of course (studyTime field).
-       *    Distribute time *equally* on all books studied (regardless of being completed)
-       * 6: update field completionPercentage (by calling completionPercentageCourseUnit)
-       * 7: check if completed and act accordingly
-       * 8: rise from the seat (study session finished)
-       **/
+      // 1: request librarian to requisite chosen books (state: REQ_BOOKS), wait until available
+      student->state = REQ_BOOKS;
+      //waits for the books to be available
+      student->studyBookList=NULL;
+      while(student->studyBookList==NULL)
+      {
+        //librarian gives the books to the student
+        if(reqBookRequisition(student->bookList))
+        {
+          reqCollectBooks();
+          student->studyBookList=student->bookList;
+        }
+      }
+      // 2: request a free seat in library (state: REQ_SEAT)
+      student->state = REQ_SEAT;
+      pos=-1;
+      while(pos==-1);
+      {
+        spend(1);
+        while(!threadlib2(2));
+        if(seatAvailable())
+        {
+          // 3: sit
+          pos = sit(student->studyBookList);
+        }
+        while(!threadlib2(4));
+      }
+      // 4: study (state: STUDYING). Don't forget to spend time randomly in
+      //    interval [global->MIN_STUDY_TIME_UNITS, global->MAX_STUDY_TIME_UNITS]
+      student->state = STUDYING;
+      int timeSpent = randomInt(global->MIN_STUDY_TIME_UNITS,global->MAX_STUDY_TIME_UNITS);
+      spend(timeSpent);
+
+
+      // 5: use time spent to update completion of course (studyTime field).
+      //    Distribute time *equally* on all books studied (regardless of being completed)
+      for(int i = 0; i < bookListLength(student->studyBookList); i++)
+      {
+         student->studyTime[i] += timeSpent/bookListLength(student->studyBookList);
+      }
+
+
+      // 6: update field completionPercentage (by calling completionPercentageCourseUnit)
+      student->completionPercentage = completionPercentageCourseUnit(student->courses[student->actualCourse],student->studyBookList,student->studyTime);
+
+      // 7: check if completed and act accordingly
+      if(student->completionPercentage==100){
+         //resets studyTime list
+         free(student->studyTime);
+         student->studyTime = NULL;
+         //resets bookList
+         free(student->bookList);
+         student->bookList = NULL;
+
+         student->concludedCourses[student->actualCourse]= 1;
+         student->actualCourse=-1;
+      }
+      // 8: rise from the seat (study session finished)
+      while(!threadlib2(2));
+      rise(pos);
+      while(!threadlib2(4));
 
       // leave books in table
       student->studyBookList = NULL;
+
    }
+   printf("\n");
+   printf("study - %s \n", student->name);
 }
 
 static void fun(Student* student)
@@ -233,6 +336,10 @@ static void fun(Student* student)
     * 1: have fun (state: HAVING_FUN). Don't forget to spend time randomly in
     *    interval [global->MIN_FUN_TIME_UNITS, global->MAX_FUN_TIME_UNITS]
     **/
+   student->state = HAVING_FUN;
+   spend(randomInt(global->MIN_FUN_TIME_UNITS,global->MAX_FUN_TIME_UNITS));
+   printf("\n");
+   printf("fun - %s \n", student->name);
 }
 
 static void done(Student* student)
@@ -240,6 +347,11 @@ static void done(Student* student)
    /** TODO:
     * 1:  life in university is over (state: DONE).
     **/
+
+   student = destroyStudent(student);
+   student->state = DONE;
+   printf("\n");
+   printf("done - %s \n", student->name);
 }
 
 static int courseConcluded(Student* student)
@@ -396,4 +508,3 @@ static int bookSearch(Student* student, struct _Book_* book)
 
    return res;
 }
-

@@ -7,6 +7,8 @@
 #include "global.h"
 #include "logger.h"
 #include "library.h"
+#include "thread.h"
+
 
 typedef struct _Library_
 {
@@ -21,7 +23,15 @@ typedef struct _Library_
    /* TODO: change this structure to your needs */
 
 } Library;
+typedef struct _threadlib_
+{
+  pthread_mutex_t* pmtxbo;
+  pthread_mutexattr_t* attrbo;
+  pthread_mutex_t* pmtxse;
+  pthread_mutexattr_t* attrse;
+}threadlib;
 
+threadlib* threadlib1=NULL;
 static const char* descText = "Library:";
 static Library* library = NULL;
 
@@ -48,11 +58,47 @@ int totalSizeOfLibraryDataStructure()
           sizeof(struct _Book_*)*(global->NUM_TABLES*global->NUM_SEATS_PER_TABLE);
 }
 
+int threadlib2(int mut)
+{
+  if (mut==1){
+    mutex_lock(threadlib1->pmtxbo);
+    return 1;
+  }
+  else if (mut==2) {
+    mutex_lock(threadlib1->pmtxse);
+    return 1;
+  }
+  else if (mut==3) {
+    mutex_unlock(threadlib1->pmtxbo);
+    return 1;
+  }
+  else if (mut==4) {
+    mutex_unlock(threadlib1->pmtxse);
+    return 1;
+  }
+  return 0;
+}
+
 static void allocLibraryDataStructure()
 {
    /* TODO: change this function to your needs */
 
    assert (library == NULL);
+
+   fprintf(stderr,"\naqui\n");
+   threadlib1 = (threadlib*)shmAlloc(sizeof(threadlib)); ///////not work
+   /* TODO: change this function to your needs */
+   fprintf(stderr,"\naqui\n");
+   threadlib1->attrbo = (pthread_mutexattr_t *)shmAlloc(sizeof(pthread_mutexattr_t *));
+   threadlib1->attrse = (pthread_mutexattr_t *)shmAlloc(sizeof(pthread_mutexattr_t *));
+   threadlib1->pmtxbo = (pthread_mutex_t *)shmAlloc(sizeof(pthread_mutex_t *));
+   threadlib1->pmtxse = (pthread_mutex_t *)shmAlloc(sizeof(pthread_mutex_t *));
+   mutexattr_init(threadlib1->attrbo);
+   mutex_init(threadlib1->pmtxbo,threadlib1->attrbo);
+   mutex_unlock(threadlib1->pmtxbo);
+   mutexattr_init(threadlib1->attrse);
+   mutex_init(threadlib1->pmtxse,threadlib1->attrse);
+   mutex_unlock(threadlib1->pmtxse);
 
    library = (Library*)shmAlloc(sizeof(Library));
    library->bookList = (struct _Book_**)shmAlloc(sizeof(struct _Book_*)*global->NUM_BOOKS);
@@ -70,6 +116,16 @@ static void freeLibraryDataStructure()
 
    assert (library != NULL);
 
+   /* TODO: change this function to your needs */
+   mutexattr_destroy(threadlib1->attrbo);
+   mutex_destroy(threadlib1->pmtxbo);
+   mutexattr_destroy(threadlib1->attrse);
+   mutex_destroy(threadlib1->pmtxse);
+   free(threadlib1->pmtxse);
+   free(threadlib1->pmtxbo);
+   free(threadlib1->attrse);
+   free(threadlib1->attrbo);
+   free(threadlib1);
    free(library->booksInSeat);
    free(library->seatOccupied);
    free(library->bookAvailable);
@@ -137,7 +193,6 @@ int booksAvailableInLibrary(struct _Book_** books)
    int res = 1;
    for(int i = 0; res && books[i] != NULL; i++)
       res = library->bookAvailable[bookSearch(books[i])] > 0;
-
    return res;
 }
 
@@ -147,7 +202,6 @@ void requisiteBooksFromLibrary(struct _Book_** books)
 
    assert (books != NULL);
    assert (booksAvailableInLibrary(books));
-
    for(int i = 0; books[i] != NULL; i++)
    {
       int idx = bookSearch(books[i]);
@@ -553,9 +607,9 @@ static int lengthTable()
 
 /*
  * one table with 4 seats:
- *  -- -- 
+ *  -- --
  * |     |
- *  -- -- 
+ *  -- --
  */
 static int lengthAllTables()
 {
@@ -571,4 +625,3 @@ static int bookSearch(struct _Book_* book)
 
    return res;
 }
-

@@ -1,8 +1,8 @@
 /**
  *  \brief University library simulation
- *  
+ *
  * SO's second assignment.
- * 
+ *
  * \author Miguel Oliveira e Silva - 2017/2018
  */
 
@@ -22,6 +22,7 @@
 #include "librarian.h"
 #include "student.h"
 #include "all-courses.h"
+#include "thread.h"
 
 static struct _Student_** students = NULL;
 
@@ -32,6 +33,7 @@ static void showParams(Parameters *params);
 static void go();
 static void finish();
 static void initSimulation();
+void proc_create(int * pidp, void* (*routine)(void*), void* arg);
 
 static const char* names[] = {
   "Ana", "Paulo", "Luis", "Miguel", "Jose", "Joao", "Antonio", "Abel",
@@ -76,13 +78,50 @@ int main(int argc, char* argv[])
 static void go()
 {
    /* TODO: change this function to your needs */
-
+   char* a="start";
+   int logb=0;
+   sendLog(logb,a);
    assert (students != NULL);
 
-/* remove the following code: */
-void dummyLogger();
-dummyLogger();
-/* end of removal */
+   /* launching the librarian process */
+   pthread_t librarianID;
+   thread_create(&(librarianID),NULL, mainLibrarian, NULL);
+   printf("mainLibrarian Process %d launched\n", librarianID);
+
+   /* launching the processes/students */
+   pthread_t pid[global->NUM_STUDENTS];
+   int i;
+   for (i=0; i<global->NUM_STUDENTS; i++)
+   {
+      thread_create(&(pid[i]), NULL, mainStudent, students[i]);
+      printf("mainStudent Process %d launched\n", pid[i]);
+   }
+   pthread_t loggerID;
+   thread_create(&(loggerID),NULL, mainLogger, NULL);
+   printf("mainLogger Process %d launched\n", loggerID);
+
+   /* wait for processes/students to conclude */
+   int status[global->NUM_STUDENTS];
+   printf("Waiting for processes to return\n");
+   for (i=0; i<global->NUM_STUDENTS; i++)
+   {
+      thread_join(pid[i], (void**)&status[i]);
+      printf("mainStudent Process %d returned\n", pid[i]);
+   }
+   reqCollectBooks();
+   reqTermination();
+   int* statusLibrarian;
+   /* wait for the librarian process to conclude*/
+   thread_join(librarianID, (void**)&statusLibrarian);
+   printf("mainLibrarian Process %d returned\n", librarianID);
+   a="end";
+   sendLog(logb,a);
+   termLogger();
+   int* statusLogger;
+   thread_join(loggerID, (void**)&statusLibrarian);
+   printf("mainLogger Process %d returned\n", loggerID);
+
+
 }
 
 /**
@@ -90,7 +129,10 @@ dummyLogger();
  */
 static void finish()
 {
+   destroyLibrary();
    /* TODO: change this function to your needs */
+   printf("adeus");
+   printf("\n");
 }
 
 static void initSimulation()
@@ -407,4 +449,3 @@ static void showParams(Parameters *params)
    printf("  --fun-study-time-units: [%d,%d]\n", params->MIN_FUN_TIME_UNITS, params->MAX_FUN_TIME_UNITS);
    printf("\n");
 }
-
