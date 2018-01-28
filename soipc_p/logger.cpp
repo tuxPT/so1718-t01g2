@@ -349,6 +349,7 @@ static void printEvent(Event* e)
          logLine++;
       for(int i = strlen(logLine)-1; logLine[i] == ' '; i++)
          logLine[i] = '\0';
+      printf("%s\n", logLine);
    }
    else
    {

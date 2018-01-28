@@ -90,11 +90,13 @@ int main(int argc, char* argv[])
    showParams(global);
    printf("<press RETURN>");
    getchar();
+   clearConsole();
 
    initSimulation();
    printf("AFTER init_simutlation\n");
    go();
    finish();
+   getchar();
 
    return 0;
 }
