@@ -122,6 +122,7 @@ struct _Student_* newStudent(struct _Student_* student, char* name, struct _Cour
       NULL
    };
    student->logId = registerLogger((char*)"Student:", line ,column , 3, lengthStudent(), (char**)translations);
+   printf("%d HERE !!!!\n",student->logId);
    sendLog(student->logId, toStringStudent(student));
 
    return student;
@@ -156,25 +157,30 @@ int logIdStudent(struct _Student_* student)
 static void life(Student* student)
 {
    enrollUniversity(student);
+   DEBUG;
    for(int c = 0; c < student->numCourses; c++)
    {
+      DEBUG;
       enrollCourse(student);
       do
       {
          sleep(student);
-         printf("%s -- %s\n ", student->name,student->state);
+         DEBUG;
+         //printf("LIFE !!!!!!!!!!!!!! %s -- %d\n ", student->name,student->state);
          eat(student, 0);
-         printf("%s -- %s\n ", student->name,student->state);
+         DEBUG;
+         //printf("LIFE !!!!!!!!!!!!!!%s -- %d\n ", student->name,student->state);
          study(student);
-         printf("%s -- %s\n ", student->name,student->state);
+         DEBUG;
+         //printf("LIFE !!!!!!!!!!!!!!%s -- %d\n ", student->name,student->state);
          eat(student, 1);
-         printf("%s -- %s\n ", student->name,student->state);
+         //printf("LIFE !!!!!!!!!!!!!!%s -- %d\n ", student->name,student->state);
          study(student);
-         printf("%s -- %s\n ", student->name,student->state);
+         //printf("LIFE !!!!!!!!!!!!!!%s -- %d\n ", student->name,student->state);
          eat(student, 2);
-         printf("%s -- %s\n ", student->name,student->state);
+         //printf("LIFE !!!!!!!!!!!!!!%s -- %d\n ", student->name,student->state);
          fun(student);
-         printf("%s -- %s\n ", student->name,student->state);
+         //printf("LIFE !!!!!!!!!!!!!!%s -- %d\n ", student->name,student->state);
       }
       while(!courseConcluded(student));
    }
@@ -273,33 +279,31 @@ static void eat(Student* student, int meal) // 0: breakfast; 1: lunch; 2: dinner
 static void study(Student* student)
 {
    assert (student->completionPercentage == 100 || student->studyTime != NULL);
-
+   DEBUG;
    if (student->completionPercentage < 100)
    {
+      DEBUG;
 		  int n = chooseBooksToStudy(student); // (no need to understand the algorithm)
       int pos;
       int j=0;
       int *studyBookListToBookListIndex = (int*)calloc(n, sizeof(int));  
-
+      DEBUG;
       const long keySemLibrary = 0x1115L;
       int semid_lib = semget(keySemLibrary, 0, 0);
-
 		  if (semid_lib == -1)
       {
          perror("Fail creating locker semaphore student-Lib");
          exit(EXIT_FAILURE);
       }
-      
       // 1: request librarian(now strait from library) to requisite chosen books (state: REQ_BOOKS), wait until available
-      printf("%s -- %s\n ", student->name,student->state);
       student->state = REQ_BOOKS;
 		  sendLog(student->logId, toStringStudent(student));
-
-		//creates and allocs memory for list of books current studing 
+      DEBUG;
+	 	//creates and allocs memory for list of books current studing 
       student->studyBookList = (struct _Book_**)memAlloc((n)*sizeof(struct _Book_*));
       for(int i = 0; i < n; i++)
          student->studyBookList[i] = (struct _Book_*)memAlloc(totalSizeOfBook());
-
+       DEBUG;
 		//from the booklist selects a number (n) of them that aren't finished
       for(int i = 0;i<bookListLength(student->bookList);i++)
       {
@@ -312,25 +316,25 @@ static void study(Student* student)
           }
         }
       }
-
+      DEBUG;
 		//waits for the books to be available
-      printf("%s -- %s\n ", student->name,student->state);
-      int done = -1;
-      do{
+   
+     
         while(not(booksAvailableInLibrary(student->studyBookList)));
+        DEBUG;
         psem_down(semid_lib,2);
-        done = requisiteBooksFromLibrary(student->studyBookList);
+        DEBUG;
+        requisiteBooksFromLibrary(student->studyBookList);
+        DEBUG;
         psem_up(semid_lib,2);
-      }while(done<1);
-      printf("%s -- %s\n ", student->name,student->state);
+     
 
-
+      DEBUG;
       // 2: request a free seat in library (state: REQ_SEAT)
       student->state = REQ_SEAT;
 		sendLog(student->logId, toStringStudent(student));
-    printf("%s -- %s\n ", student->name,student->state);
 		while(seatAvailable() == 0);
-
+    DEBUG;
 		//printf("semmmmm\n");
 		// 3: sit
 		psem_down(semid_lib, 0);
@@ -339,11 +343,9 @@ static void study(Student* student)
 		//printf("SEM2\n");
 		pos = sit(student->studyBookList);
     psem_up(semid_lib,0);
-    printf("%s -- %s\n ", student->name,student->state);
       // 4: study (state: STUDYING). Don't forget to spend time randomly in
       //    interval [global->MIN_STUDY_TIME_UNITS, global->MAX_STUDY_TIME_UNITS]
       student->state = STUDYING;
-    printf("%s -- %s\n ", student->name,student->state);
 		int timeSpent = randomInt(global->MIN_STUDY_TIME_UNITS,global->MAX_STUDY_TIME_UNITS);
       spend(timeSpent);
 
