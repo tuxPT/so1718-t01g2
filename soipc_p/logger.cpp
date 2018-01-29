@@ -51,11 +51,11 @@ static int shmid_logger;
 static int nrevents = 0;
 static int nreventsSend = 0;
 
-const long keySemLibrarian;
-const long keyShmLibrarian;
-const long keySemLogger;
-const long keyShmLogger;
-const long keySemLibrary;
+const long keySemLibrarian = 0x1111L;
+const long keyShmLibrarian = 0x1112L;
+const long keySemLogger = 0x1113L;
+const long keyShmLogger = 0x1114L;
+const long keySemLibrary = 0x1115L;
 
 static Queue* queue = newQueue(NULL);
 static Regist** areas = (Regist**)memAlloc(MAX_REGISTS*sizeof(Regist*));

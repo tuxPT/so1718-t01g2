@@ -28,7 +28,7 @@ void my_handler(int s)
 	if (foo)
 	{
 		foo = 1;
-		printf("Caught signal %d\n", s);
+		// printf("Caught signal %d\n", s);
 		// termLogger();
 		exit(1);
 	}

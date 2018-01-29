@@ -122,7 +122,6 @@ struct _Student_* newStudent(struct _Student_* student, char* name, struct _Cour
       NULL
    };
    student->logId = registerLogger((char*)"Student:", line ,column , 3, lengthStudent(), (char**)translations);
-   printf("%d HERE !!!!\n",student->logId);
    sendLog(student->logId, toStringStudent(student));
 
    return student;
@@ -323,8 +322,6 @@ static void study(Student* student)
          student->studyTime[idx] += progress;
       }
 
-
-
 		// 6: update field completionPercentage (by calling completionPercentageCourseUnit)
       student->completionPercentage = completionPercentageCourseUnit(student->courses[student->actualCourse],student->bookList,student->studyTime);
       sendLog(student->logId, toStringStudent(student));
@@ -347,8 +344,7 @@ static void study(Student* student)
       //free(studyBookListToBookListIndex);
 
    }
-
-
+	
 	// printf("\n");
    // printf("study - %s \n", student->name);
 }
