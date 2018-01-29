@@ -15,7 +15,7 @@
 #include <unistd.h>
 #include <iostream>
 using namespace std;
-#define DEBUG cout << __FILE__ << ":" << __func__<< " line:" << __LINE__ << endl
+#define DEBUG cout << "pid="<<getpid()<<" "<< __FILE__ << " : " << __func__<< " line:" << __LINE__ << endl
 
 #define ACCESS_LIBRARY 0
 #define SIT 1
@@ -157,7 +157,7 @@ int logIdStudent(struct _Student_* student)
 static void life(Student* student)
 {
    enrollUniversity(student);
-   DEBUG;
+   //DEBUG;
    for(int c = 0; c < student->numCourses; c++)
    {
       DEBUG;
@@ -165,13 +165,13 @@ static void life(Student* student)
       do
       {
          sleep(student);
-         DEBUG;
+         //DEBUG;
          //printf("LIFE !!!!!!!!!!!!!! %s -- %d\n ", student->name,student->state);
          eat(student, 0);
-         DEBUG;
+         //DEBUG;
          //printf("LIFE !!!!!!!!!!!!!!%s -- %d\n ", student->name,student->state);
          study(student);
-         DEBUG;
+         //DEBUG;
          //printf("LIFE !!!!!!!!!!!!!!%s -- %d\n ", student->name,student->state);
          eat(student, 1);
          //printf("LIFE !!!!!!!!!!!!!!%s -- %d\n ", student->name,student->state);
@@ -227,6 +227,7 @@ static void enrollCourse(Student* student)
    // 4: initialize student relevant state;
    student->state = NORMAL;
    student->studyTime = (int*)calloc(bookListLength(student->bookList),sizeof(int));
+   student->completionPercentage=0;
 	 sendLog(student->logId, toStringStudent(student));
 	 // printf("\n");
    // printf("enrollCourse - %s \n", student->name);
@@ -279,120 +280,74 @@ static void eat(Student* student, int meal) // 0: breakfast; 1: lunch; 2: dinner
 static void study(Student* student)
 {
    assert (student->completionPercentage == 100 || student->studyTime != NULL);
-   DEBUG;
+   //DEBUG;
    if (student->completionPercentage < 100)
    {
-      DEBUG;
-		  int n = chooseBooksToStudy(student); // (no need to understand the algorithm)
+      ////DEBUG;
+		int n = chooseBooksToStudy(student); // (no need to understand the algorithm)
       int pos;
-      int j=0;
-      int *studyBookListToBookListIndex = (int*)calloc(n, sizeof(int));  
-      DEBUG;
-      const long keySemLibrary = 0x1115L;
-      int semid_lib = semget(keySemLibrary, 0, 0);
-		  if (semid_lib == -1)
-      {
-         perror("Fail creating locker semaphore student-Lib");
-         exit(EXIT_FAILURE);
-      }
+      //DEBUG;
+
       // 1: request librarian(now strait from library) to requisite chosen books (state: REQ_BOOKS), wait until available
       student->state = REQ_BOOKS;
-		  sendLog(student->logId, toStringStudent(student));
-      DEBUG;
-	 	//creates and allocs memory for list of books current studing 
-      student->studyBookList = (struct _Book_**)memAlloc((n)*sizeof(struct _Book_*));
-      for(int i = 0; i < n; i++)
-         student->studyBookList[i] = (struct _Book_*)memAlloc(totalSizeOfBook());
-       DEBUG;
-		//from the booklist selects a number (n) of them that aren't finished
-      for(int i = 0;i<bookListLength(student->bookList);i++)
-      {
-        if(student->studyTime[i]<minStudyBookTimeUnitsCourseUnit(student->courses[student->actualCourse],student->bookList[i]))
-        {
-          if(j<bookListLength(student->studyBookList)){
-            student->studyBookList[j]=student->bookList[i];
-            studyBookListToBookListIndex[j]=i;
-            j++;
-          }
-        }
-      }
-      DEBUG;
+		sendLog(student->logId, toStringStudent(student));
+      //DEBUG;
+
 		//waits for the books to be available
    
-     
-        while(not(booksAvailableInLibrary(student->studyBookList)));
-        DEBUG;
-        psem_down(semid_lib,2);
-        DEBUG;
-        requisiteBooksFromLibrary(student->studyBookList);
-        DEBUG;
-        psem_up(semid_lib,2);
+  
+      requisiteBooksFromLibrary(student->studyBookList);
+
+
+      //DEBUG;
+      student->state = REQ_SEAT;
+      sendLog(student->logId, toStringStudent(student));
+      
+      pos = sit(student->studyBookList);
+  
      
 
-      DEBUG;
-      // 2: request a free seat in library (state: REQ_SEAT)
-      student->state = REQ_SEAT;
-		sendLog(student->logId, toStringStudent(student));
-		while(seatAvailable() == 0);
-    DEBUG;
-		//printf("semmmmm\n");
-		// 3: sit
-		psem_down(semid_lib, 0);
-		//printf("SEM1\n");
-    //psem_down(semid_lib, SIT);
-		//printf("SEM2\n");
-		pos = sit(student->studyBookList);
-    psem_up(semid_lib,0);
       // 4: study (state: STUDYING). Don't forget to spend time randomly in
       //    interval [global->MIN_STUDY_TIME_UNITS, global->MAX_STUDY_TIME_UNITS]
       student->state = STUDYING;
 		int timeSpent = randomInt(global->MIN_STUDY_TIME_UNITS,global->MAX_STUDY_TIME_UNITS);
       spend(timeSpent);
 
-		//printf("SEM3\n");
-
+	
+      int progress = timeSpent/n;
 		// 5: use time spent to update completion of course (studyTime field).
       //    Distribute time *equally* on all books studied (regardless of being completed)
       for(int i = 0; i < bookListLength(student->studyBookList); i++)
       {
-         student->studyTime[studyBookListToBookListIndex[i]] += timeSpent/bookListLength(student->studyBookList);
+         int idx = bookSearch(student,student->studyBookList[i]);
+         student->studyTime[idx] += progress;
       }
 
-		//printf("SEM4\n");
+
 
 		// 6: update field completionPercentage (by calling completionPercentageCourseUnit)
       student->completionPercentage = completionPercentageCourseUnit(student->courses[student->actualCourse],student->bookList,student->studyTime);
-		//printf("SEM5\n");
+      sendLog(student->logId, toStringStudent(student));
 
 		// 7: check if completed and act accordingly
-      if(student->completionPercentage>=100){
-         //resets studyTime list
-         //free(student->studyTime);
-         student->studyTime = NULL;
-         //resets bookList
-         //free(student->bookList);
-         student->bookList = NULL;
-
+      if(courseConcluded(student)){
          student->concludedCourses[student->actualCourse]= 1;
-         student->actualCourse=-1;
       }
+
       // 8: rise from the seat (study session finished)
-		// printf("RISEEEE\n");
-      //rise(pos);
-     psem_up(semid_lib,SIT);
-		//printf("SEM6\n");
+      rise(pos);
+      //psem_up(semid_lib,SIT);
 
 		// leave books in table
-      if(student->studyBookList !=NULL)
-      {
-         //free(student->studyBookList);
-         student->studyBookList = NULL;
-      }
 
+      student->studyBookList = NULL;
+      sendLog(student->logId, toStringStudent(student));
+
+      reqCollectBooks();
       //free(studyBookListToBookListIndex);
 
    }
-	sendLog(student->logId, toStringStudent(student));
+
 
 	// printf("\n");
    // printf("study - %s \n", student->name);

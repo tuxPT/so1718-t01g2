@@ -31,7 +31,7 @@
 #include <unistd.h>
 using namespace std;
 
-#define DEBUG cout << __FILE__ << ":" << __func__<< " line:" << __LINE__ << endl
+#define DEBUG; cout << __FILE__ << ":" << __func__<< " line:" << __LINE__ << endl
 
 static struct _Student_** students = NULL;
 
@@ -99,7 +99,7 @@ int main(int argc, char* argv[])
    clearConsole();
 
    initSimulation();
-   DEBUG;
+   //DEBUG;;
    go();
    finish();
    getchar();
@@ -115,7 +115,7 @@ static void go()
    /* TODO: change this function to your needs */
 
    assert (students != NULL);
-   DEBUG;
+   //DEBUG;;
    /* launching the librarian process */
    proc_create(&(loggerID), mainLogger, NULL);
    int librarianID;
@@ -183,12 +183,12 @@ static void initSimulation()
 
    initLogger();
    int line = 1;
-   DEBUG;
+   //DEBUG;;
    initLibrary();
-   DEBUG;
+   //DEBUG;;
    line += numLinesLibrary();
    initLibrarian(line, 0);
-   DEBUG;
+   //DEBUG;;
    initAllCourses(global->NUM_COURSE_UNITS, line ,lengthLibrarian()+1);
 
    line += getNumLinesLogger(logIdLibrarian());
@@ -196,9 +196,9 @@ static void initSimulation()
    line++;
    static const char* descText = "Students:";
    int logId = registerLogger((char*)descText, line ,0 , 1, strlen(descText), NULL);
-   DEBUG;
+   //DEBUG;;
    sendLog(logId, (char*)descText);
-   DEBUG;
+   //DEBUG;;
 
    line++;
    students = (struct _Student_**)memAlloc(sizeof(struct _Student_*)*global->NUM_STUDENTS);
@@ -208,7 +208,7 @@ static void initSimulation()
       students[i] = newStudent(NULL, randomString((char**)names, namesUsed, stringListLength((char**)names)), randomCourseList(), line, 0);
       line += getNumLinesLogger(logIdStudent(students[i]));
    }
-   DEBUG;
+   //DEBUG;;
 }
 /*********************************************************************/
 // No need to change remaining code!

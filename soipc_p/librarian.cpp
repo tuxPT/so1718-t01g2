@@ -27,7 +27,7 @@
 #include <unistd.h>
 #include <iostream>
 using namespace std;
-#define DEBUG cout << __FILE__ << ":" << __func__<< " line:" << __LINE__ << endl
+#define DEBUG; cout << __FILE__ << ":" << __func__<< " line:" << __LINE__ << endl
 
 
 typedef struct _Request_
@@ -80,6 +80,7 @@ const long keyShmLibrarian = 0x1112L;
 const long keySemLogger = 0x1113L;
 const long keyShmLogger = 0x1114L;
 const long keySemLibrary = 0x1115L;
+//const long keyShmLibrary = 0x1116L;
 
 static const char* descText = "Librarian:";
 
@@ -350,30 +351,22 @@ static void collectBooks()
     * 2. check of pending requests can be attended (in order)
     * 3. Don't forget to spend time randomly in interval [global->MIN_HANDLE_REQUEST_TIME_UNITS, global->MAX_HANDLE_REQUEST_TIME_UNITS]
     **/
-
-   int semid_lib = semget(keySemLibrary, 0, 0);
-
-   if (semid_lib == -1)
-   {
-      perror("Fail creating locker semaphore Librarian -> semid_lib");
-      exit(EXIT_FAILURE);
-   }
-
-
-   psem_down(semid_lib,0);
+    DEBUG;
 
 
    for(int seatNum = 0; seatNum < numSeats(); seatNum++)
    {
       if(not(seatOccupied(seatNum)) and booksInSeat(seatNum))
       {
+        DEBUG;
          collectBooksLibrary(seatNum); 
+        DEBUG;     
       }
    }
    spend(randomInt(global->MIN_HANDLE_REQUEST_TIME_UNITS, global->MAX_HANDLE_REQUEST_TIME_UNITS));
-	sendLog(logId, toStringLibrarian());
+	DEBUG;
+  sendLog(logId, toStringLibrarian());
 
-   psem_up(semid_lib,0);
 }
 
 static void handleRequest(Request* req)

@@ -99,7 +99,7 @@ void initLogger()
 {
    /* TODO: change this function to your needs */
 
-   semid_logger = psemget(keySemLogger, 2, IPC_CREAT | IPC_EXCL | 0660);
+   semid_logger = semget(keySemLogger, 2, IPC_CREAT | IPC_EXCL | 0660);
    union semun{
       int val; /* used for SETVAL only */
       struct semid_ds *buf; /* used for IPC_STAT and IPC_SET */
@@ -187,9 +187,12 @@ void* processMessageChannel(void* arg)
 		int i = e->logId;
 		char* str = ((char*)e) + 4;
 
-		Event* copyEvent = newEvent(e->logId, strdup(str));
-      printf("Receive %d\n",nrevents);
-      printf("alive %d\n",_alive_);
+		Event* copyEvent = newEvent(i, strdup(str));
+      //DEBUG;
+      //printf("Receive %d  ID----->> %d text-----> %s\n",nrevents,copyEvent->logId,copyEvent->text);
+      //DEBUG;
+      //printEvent(copyEvent);
+      //DEBUG;
       nrevents++;
       inQueue(queue, copyEvent);
 		pshmdt(e);
@@ -220,9 +223,9 @@ void sendLog(int logId, char* text)
 	Event* ev = (Event*)memory;
 
    Event* e = newEvent(logId, text);
-	
-   printf("Send %d\n",nreventsSend);
-   nreventsSend++;
+	//DEBUG;
+   //printf("Send %d\n",nreventsSend);
+   //nreventsSend++;
 
 	ev->logId = logId;
 	strcpy(memory+4, e->text);

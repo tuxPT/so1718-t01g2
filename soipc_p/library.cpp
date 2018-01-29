@@ -24,11 +24,6 @@ typedef struct _Library_
    int logIdBookShelf;
    int logIdTables;
    int semid_lib;
-   const long keySemLibrarian = 0x1111L;
-   const long keyShmLibrarian = 0x1112L;
-   const long keySemLogger = 0x1113L;
-   const long keyShmLogger = 0x1114L;
-   const long keySemLibrary = 0x1115L;
    /* TODO: change this structure to your needs */
 
 } Library;
@@ -39,13 +34,19 @@ using namespace std;
 #define DEBUG cout << __FILE__ << ":" << __func__<< " line:" << __LINE__ << endl
 
 #define ACCESS_LIBRARY 0
-#define SIT 1
+#define SITSEM 1
 #define REQBOOKS 2
+
+static const long keySemLibrarian = 0x1111L;
+static const long keyShmLibrarian = 0x1112L;
+static const long keySemLogger = 0x1113L;
+static const long keyShmLogger = 0x1114L;
+static const long keySemLibrary = 0x1115L;
 
 static const char* descText = "Library:";
 static Library* library = NULL;
-
-
+static const long keyShmLibrary = 0x1116L;
+static int shmid_library;
 static void allocLibraryDataStructure();
 static void freeLibraryDataStructure();
 static void invariantLibrary();
@@ -73,8 +74,8 @@ static void allocLibraryDataStructure()
    /* TODO: change this function to your needs */
 
    assert (library == NULL);
-
-   library = (Library*)shmAlloc(sizeof(Library));
+   shmid_library = shmget(keyShmLibrary, sizeof(Library), IPC_CREAT | IPC_EXCL | 0660);
+   library = (Library*)pshmat(shmid_library, NULL, 0);
 
    assert (library!=NULL);
 }
@@ -138,9 +139,9 @@ void initLibrary()
    };
    union semun arg;
    arg.array = (ushort*) malloc(2*sizeof(ushort));
-   arg.array[0] = 1;//access semaphore
-   arg.array[1] = 5;//sit semaphore
-   arg.array[2] = 1;//requisit books semaphore
+   arg.array[ACCESS_LIBRARY] = 1;//access semaphore
+   arg.array[SITSEM] = 1;//sit semaphore
+   arg.array[REQBOOKS] = 1;//requisit books semaphore
    semctl(library->semid_lib, 0, SETALL, arg);
 }
 
@@ -149,49 +150,70 @@ void destroyLibrary()
 {
    /* TODO: change this function to your needs */
    semctl(library->semid_lib, 0, IPC_RMID);
+   pshmctl(shmid_library, IPC_RMID, NULL);
    freeLibraryDataStructure();
 }
 
 int booksAvailableInLibrary(struct _Book_** books)
 {
    /* TODO: change this function to your needs */
-
+   //shmid_library = shmget(keyShmLibrary, 0, 0);
+   //Library* library = (Library*)pshmat(shmid_library, NULL, 0);
    assert (books != NULL);
    assert (booksExistsInLibrary(books));
+
+   int semid_lib = semget(keySemLibrary, 0, 0);
+   //psem_down(semid_lib,ACCESS_LIBRARY);
    int res = 1;
    for(int i = 0; res && books[i] != NULL; i++)
       res = library->bookAvailable[bookSearch(books[i])] > 0;
-
+   //DEBUG;
 	//invariantLibrary();
 	//sendLog(library->logIdBookShelf, toStringBookShelfs());
-
+   //psem_up(semid_lib,ACCESS_LIBRARY);
 	return res;
 }
 
 void requisiteBooksFromLibrary(struct _Book_** books)
 {
    /* TODO: change this function to your needs */
-
+   //shmid_library = shmget(keyShmLibrary, 0, 0);
+   //Library* library = (Library*)pshmat(shmid_library, NULL, 0);
    //psem_wait(semName);
    assert (books != NULL);
    assert(booksAvailableInLibrary(books));
+   int semid_lib = semget(keySemLibrary, 0, 0);
 
-   for(int i = 0; books[i] != NULL; i++)
+   int hasbooks=0;
+   while(hasbooks==0)
    {
-      int idx = bookSearch(books[i]);
-      library->bookAvailable[idx]--;
-      library->booksInTransit++;
-   }
-   sendLog(library->logIdBookShelf, toStringBookShelfs());
-	invariantLibrary();
- 
+      psem_down(semid_lib,ACCESS_LIBRARY);
 
+   
+      hasbooks= booksAvailableInLibrary(books);
+
+      for(int i = 0; books[i] != NULL; i++)
+      {
+         int idx = bookSearch(books[i]);
+         library->bookAvailable[idx]--;
+         library->booksInTransit++;
+      }
+      //DEBUG;
+      sendLog(library->logIdBookShelf, toStringBookShelfs());
+      
+      //DEBUG;
+      invariantLibrary();
+      psem_up(semid_lib,ACCESS_LIBRARY);
+
+   }
+   
 }
 
 struct _Book_** randomBookListFromLibrary(struct _Book_** result, int n)
 {
    /* TODO: change this function to your needs */
-
+   //shmid_library = shmget(keyShmLibrary, 0, 0);
+   //Library* library = (Library*)pshmat(shmid_library, NULL, 0);
    assert (n >= 1 && n < global->NUM_BOOKS);
 
    if (result == NULL)
@@ -221,7 +243,8 @@ struct _Book_** randomBookListFromLibrary(struct _Book_** result, int n)
 int validSeatPosition(int pos)
 {
    /* TODO: change this function to your needs */
-
+   //shmid_library = shmget(keyShmLibrary, 0, 0);
+   //Library* library = (Library*)pshmat(shmid_library, NULL, 0);
    int res;
    res = pos >= 0 && pos < numSeats();
 	//invariantLibrary();
@@ -232,7 +255,8 @@ int validSeatPosition(int pos)
 int seatOccupied(int pos)
 {
    /* TODO: change this function to your needs */
-
+   //shmid_library = shmget(keyShmLibrary, 0, 0);
+   //Library* library = (Library*)pshmat(shmid_library, NULL, 0);
    assert (validSeatPosition(pos));
 
    int res;
@@ -245,7 +269,9 @@ int seatOccupied(int pos)
 int seatAvailable()
 {
    /* TODO: change this function to your needs */
-	int n = getSeat();
+   //shmid_library = shmget(keyShmLibrary, 0, 0);
+	//Library* library = (Library*)pshmat(shmid_library, NULL, 0);
+   int n = getSeat();
 
 	//invariantLibrary();
 	//sendLog(library->logIdTables, toStringTables());
@@ -260,7 +286,8 @@ int seatAvailable()
 int booksInSeat(int pos)
 {
    /* TODO: change this function to your needs */
-
+   //shmid_library = shmget(keyShmLibrary, 0, 0);
+   //Library* library = (Library*)pshmat(shmid_library, NULL, 0);
    assert (validSeatPosition(pos));
 
    int res;
@@ -274,33 +301,45 @@ int booksInSeat(int pos)
 int sit(struct _Book_** books)
 {
    /* TODO: change this function to your needs */
-
+   //shmid_library = shmget(keyShmLibrary, 0, 0);
+   //Library* library = (Library*)pshmat(shmid_library, NULL, 0);
    assert (books != NULL);
    assert (booksExistsInLibrary(books));
-   assert (seatAvailable());
+   //assert (seatAvailable());
+   int res=numSeats();
+   int semid_lib = semget(keySemLibrary, 0, 0);
+   
+   while(res>=numSeats()){
+      psem_down(semid_lib,SITSEM);
 
+      if(seatAvailable()){
+         res = getRandomSeat();
+         library->seatOccupied[res] = 1;
+         for(int i = 0; books[i] != NULL; i++)
+         {
+            library->booksInSeat[res][i] = *(books[i]);
+            library->numBooksInSeat[res]++;
+         }
+         library->booksInTransit -= bookListLength(books);
+         sendLog(library->logIdTables, toStringTables());
 
-   int res;
-   res = getRandomSeat();
-   library->seatOccupied[res] = 1;
-   for(int i = 0; books[i] != NULL; i++)
-   {
-      library->booksInSeat[res][i] = *(books[i]);
-      library->numBooksInSeat[res]++;
-   }
-   library->booksInTransit -= bookListLength(books);
-   sendLog(library->logIdTables, toStringTables());
-
-   invariantLibrary();
-	return res;
+         invariantLibrary();
+      }
+      psem_up(semid_lib,SITSEM);
+	}
+   return res;
 }
 
 void rise(int pos)
 {
    /* TODO: change this function to your needs */
-
+   //shmid_library = shmget(keyShmLibrary, 0, 0);
+   //Library* library = (Library*)pshmat(shmid_library, NULL, 0);
    assert (validSeatPosition(pos));
    assert (seatOccupied(pos));
+
+   int semid_lib = semget(keySemLibrary, 0, 0);
+   psem_down(semid_lib,SITSEM);
 
    library->seatOccupied[pos] = 0;
    sendLog(library->logIdTables, toStringTables());
@@ -309,6 +348,8 @@ void rise(int pos)
 	invariantLibrary();
 	//printf("SEM9\n");
 
+   psem_up(semid_lib,SITSEM);
+
 	//sendLog(library->logIdTables, toStringTables());
 	//printf("SEM 10\n");
 }
@@ -316,9 +357,13 @@ void rise(int pos)
 void collectBooksLibrary(int pos)
 {
    /* TODO: change this function to your needs */
-
+   //shmid_library = shmget(keyShmLibrary, 0, 0);
+   //Library* library = (Library*)pshmat(shmid_library, NULL, 0);
    assert (validSeatPosition(pos));
    assert (booksInSeat(pos));
+
+   int semid_lib = semget(keySemLibrary, 0, 0);
+   psem_down(semid_lib,ACCESS_LIBRARY);
 
    struct _Book_**books = (struct _Book_**)alloca(sizeof(struct _Book_*)*(library->numBooksInSeat[pos]+1));
    for(int i = 0; i < library->numBooksInSeat[pos]; i++)
@@ -329,7 +374,7 @@ void collectBooksLibrary(int pos)
    sendLog(library->logIdTables, toStringTables());
    //sendLog(library->logIdBookShelf, toStringBookShelfs());
 	invariantLibrary();
-	sendLog(library->logIdTables, toStringTables());
+	psem_up(semid_lib,ACCESS_LIBRARY);
 }
 
 int numLinesLibrary()
@@ -354,6 +399,7 @@ static void invariantLibrary()
    for (int i = 0; i < numSeats(); i++)
       dynamicBooks += library->numBooksInSeat[i];
 
+   //printf("DYNAMIC BOOKS ------------------------------------------------%d\n", dynamicBooks);
    if (lineMode())
    {
       if (!(library->booksInTransit >= 0))
