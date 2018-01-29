@@ -14,7 +14,7 @@
 
 using namespace std;
 #define DEBUG cout << __FILE__ << ":" << __func__<< " line:" << __LINE__ << endl
-#define SHOW cout << __FILE__ << ":" << __func__<< " line:" << __LINE__ << "\t\t\t"
+
 
 #define ACCESS 0
 #define MESSAGE 1
@@ -57,12 +57,12 @@ const long keyShmLogger = 0x1114L;
 const long keySemLibrary = 0x1115L;
 
 static Queue* queue = newQueue(NULL);
-static Regist** areas = (Regist**)shmAlloc(MAX_REGISTS*sizeof(Regist*));
+static Regist** areas = (Regist**)memAlloc(MAX_REGISTS*sizeof(Regist*));
 static int areasLength = 0;
 static int _alive_ = 1;
 static int maxLine = 0;
 static int _lineMode_ = 0;
-static char** filterOut = (char**)shmAlloc(MAX_FILTER*sizeof(char*));
+static char** filterOut = (char**)memAlloc(MAX_FILTER*sizeof(char*));
 static int filterOutLength = 0;
 
 int registerLogger(char* name, int line, int column, int numLines, int numColumns, char** lineModeTranslations)
@@ -99,7 +99,7 @@ void initLogger()
 {
    /* TODO: change this function to your needs */
 
-   semid_logger = semget(keySemLogger, 2, IPC_CREAT | IPC_EXCL | 0660);
+   semid_logger = psemget(keySemLogger, 2, IPC_CREAT | IPC_EXCL | 0660);
    union semun{
       int val; /* used for SETVAL only */
       struct semid_ds *buf; /* used for IPC_STAT and IPC_SET */
@@ -186,11 +186,10 @@ void* processMessageChannel(void* arg)
 		Event* e = (Event* )pshmat(shmid_logger, NULL, 0);
 		int i = e->logId;
 		char* str = ((char*)e) + 4;
-      SHOW<<i<<endl;
-      SHOW<<str<<endl;
+
 		Event* copyEvent = newEvent(e->logId, strdup(str));
-      //printf("Receive %d\n",nrevents);
-      //printf("alive %d\n",_alive_);
+      printf("Receive %d\n",nrevents);
+      printf("alive %d\n",_alive_);
       nrevents++;
       inQueue(queue, copyEvent);
 		pshmdt(e);
@@ -222,7 +221,7 @@ void sendLog(int logId, char* text)
 
    Event* e = newEvent(logId, text);
 	
-   //printf("Send %d\n",nreventsSend);
+   printf("Send %d\n",nreventsSend);
    nreventsSend++;
 
 	ev->logId = logId;
@@ -416,7 +415,7 @@ void switchToWindowMode()
 
 void addToFilterOut(char** remove)
 {
-   assert (remove != NULL);   
+   assert (remove != NULL);
 
    while(*remove != NULL)
    {

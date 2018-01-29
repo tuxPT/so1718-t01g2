@@ -117,6 +117,7 @@ static void go()
    assert (students != NULL);
    DEBUG;
    /* launching the librarian process */
+   proc_create(&(loggerID), mainLogger, NULL);
    int librarianID;
    proc_create(&(librarianID), mainLibrarian, NULL);
    // printf("mainLibrarian Process %d launched\n", librarianID);
@@ -178,11 +179,11 @@ static void initSimulation()
       BOX_HORIZONTAL, BOX_VERTICAL,
       NULL
    };
-   initLogger();
    addToFilterOut((char**)filterOutList);
+
+   initLogger();
    int line = 1;
    DEBUG;
-   proc_create(&(loggerID), mainLogger, NULL);
    initLibrary();
    DEBUG;
    line += numLinesLibrary();
