@@ -14,6 +14,7 @@
 
 using namespace std;
 #define DEBUG cout << __FILE__ << ":" << __func__<< " line:" << __LINE__ << endl
+#define SHOW cout << __FILE__ << ":" << __func__<< " line:" << __LINE__ << "\t"
 
 
 #define ACCESS 0

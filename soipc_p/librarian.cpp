@@ -352,21 +352,21 @@ static void collectBooks()
     * 3. Don't forget to spend time randomly in interval [global->MIN_HANDLE_REQUEST_TIME_UNITS, global->MAX_HANDLE_REQUEST_TIME_UNITS]
     **/
     DEBUG;
-
-
+   int semid_lib = semget(keySemLibrary, 0, 0);
+   psem_down(semid_lib,ACCESS_LIBRARY);
    for(int seatNum = 0; seatNum < numSeats(); seatNum++)
    {
       if(not(seatOccupied(seatNum)) and booksInSeat(seatNum))
       {
-        DEBUG;
+         DEBUG;
          collectBooksLibrary(seatNum); 
-        DEBUG;     
+         DEBUG;     
       }
    }
+   psem_up(semid_lib,ACCESS_LIBRARY);
    spend(randomInt(global->MIN_HANDLE_REQUEST_TIME_UNITS, global->MAX_HANDLE_REQUEST_TIME_UNITS));
 	DEBUG;
-  sendLog(logId, toStringLibrarian());
-
+   sendLog(logId, toStringLibrarian());
 }
 
 static void handleRequest(Request* req)

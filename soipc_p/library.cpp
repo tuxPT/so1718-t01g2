@@ -32,6 +32,8 @@ typedef struct _Library_
 #include <iostream>
 using namespace std;
 #define DEBUG cout << __FILE__ << ":" << __func__<< " line:" << __LINE__ << endl
+#define SHOW cout << __FILE__ << ":" << __func__<< " line:" << __LINE__ << "\t"
+
 
 #define ACCESS_LIBRARY 0
 #define SITSEM 1
@@ -181,32 +183,35 @@ void requisiteBooksFromLibrary(struct _Book_** books)
    //Library* library = (Library*)pshmat(shmid_library, NULL, 0);
    //psem_wait(semName);
    assert (books != NULL);
-   assert(booksAvailableInLibrary(books));
+   assert(booksExistsInLibrary(books));
    int semid_lib = semget(keySemLibrary, 0, 0);
 
    int hasbooks=0;
    while(hasbooks==0)
    {
+      //SHOW<<"BEFORE down\n";
       psem_down(semid_lib,ACCESS_LIBRARY);
-
+      //SHOW<<"AFTER down\n";
    
       hasbooks= booksAvailableInLibrary(books);
 
-      for(int i = 0; books[i] != NULL; i++)
-      {
-         int idx = bookSearch(books[i]);
-         library->bookAvailable[idx]--;
-         library->booksInTransit++;
+      if(hasbooks){
+         for(int i = 0; books[i] != NULL; i++)
+         {
+            int idx = bookSearch(books[i]);
+            library->bookAvailable[idx]--;
+            library->booksInTransit++;
+         }
       }
-      //DEBUG;
-      sendLog(library->logIdBookShelf, toStringBookShelfs());
-      
-      //DEBUG;
-      invariantLibrary();
+      //SHOW<<"BEFORE UP\n";
       psem_up(semid_lib,ACCESS_LIBRARY);
+      //SHOW<<"AFTER UP\n";
 
    }
-   
+   sendLog(library->logIdBookShelf, toStringBookShelfs());
+      
+   //DEBUG;
+   invariantLibrary();
 }
 
 struct _Book_** randomBookListFromLibrary(struct _Book_** result, int n)
@@ -363,7 +368,7 @@ void collectBooksLibrary(int pos)
    assert (booksInSeat(pos));
 
    int semid_lib = semget(keySemLibrary, 0, 0);
-   psem_down(semid_lib,ACCESS_LIBRARY);
+   //psem_down(semid_lib,ACCESS_LIBRARY);
 
    struct _Book_**books = (struct _Book_**)alloca(sizeof(struct _Book_*)*(library->numBooksInSeat[pos]+1));
    for(int i = 0; i < library->numBooksInSeat[pos]; i++)
@@ -374,7 +379,7 @@ void collectBooksLibrary(int pos)
    sendLog(library->logIdTables, toStringTables());
    //sendLog(library->logIdBookShelf, toStringBookShelfs());
 	invariantLibrary();
-	psem_up(semid_lib,ACCESS_LIBRARY);
+	//psem_up(semid_lib,ACCESS_LIBRARY);
 }
 
 int numLinesLibrary()
