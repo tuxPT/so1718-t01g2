@@ -94,7 +94,7 @@ int main(int argc, char* argv[])
    *global = params;
    processArgs(global, argc, argv);
    showParams(global);
-   //printf("<press RETURN>");
+   printf("<press RETURN>");
    getchar();
    clearConsole();
 
