@@ -45,6 +45,7 @@ static const long keySemLogger = 0x1113L;
 static const long keyShmLogger = 0x1114L;
 static const long keySemLibrary = 0x1115L;
 
+
 static const char* descText = "Library:";
 static Library* library = NULL;
 static const long keyShmLibrary = 0x1116L;

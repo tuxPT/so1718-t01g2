@@ -52,8 +52,10 @@ static const char* names[] = {
 static int* namesUsed = NULL;
 
 void my_handler(int s){
+   printf("Caught signal %d\n",s);
    finish();
    exit(1); 
+
 }
 
 static int loggerID;
@@ -92,13 +94,14 @@ int main(int argc, char* argv[])
    *global = params;
    processArgs(global, argc, argv);
    showParams(global);
-   printf("<press RETURN>");
+   //printf("<press RETURN>");
    getchar();
    clearConsole();
 
    initSimulation();
    ////DEBUG;;
    go();
+	//printf("BEFORE FINISH\n");
    finish();
    getchar();
 
@@ -138,16 +141,16 @@ static void go()
       pwaitpid(pid[i], &status[i], 0);
       // printf("mainStudent Process %d returned\n", pid[i]);
    }
-   // printf("FIM Students----------------------------------\n");
+   //printf("FIM Students----------------------------------\n");
    reqTermination();
    int statusLibrarian;
    /* wait for the librarian process to conclude*/
    pwaitpid(librarianID, &statusLibrarian, 0);
-   // printf("mainLibrarian Process %d returned\n", librarianID);
+   //printf("mainLibrarian Process %d returned\n", librarianID);
    termLogger();
    int statusLogger;
    pwaitpid(loggerID, &statusLogger, 0);
-   // printf("mainLogger Process %d returned\n", loggerID);
+   //printf("mainLogger Process %d returned\n", loggerID);
 
 }
 

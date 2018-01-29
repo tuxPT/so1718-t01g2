@@ -80,7 +80,7 @@ const long keyShmLibrarian = 0x1112L;
 const long keySemLogger = 0x1113L;
 const long keyShmLogger = 0x1114L;
 const long keySemLibrary = 0x1115L;
-//const long keyShmLibrary = 0x1116L;
+const long keyShmLibrary = 0x1116L;
 
 static const char* descText = "Librarian:";
 
