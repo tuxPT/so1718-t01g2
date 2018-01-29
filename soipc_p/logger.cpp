@@ -51,11 +51,11 @@ static int shmid_logger;
 static int nrevents = 0;
 static int nreventsSend = 0;
 
-const long keySemLibrarian = 0x1111L;
-const long keyShmLibrarian = 0x1112L;
-const long keySemLogger = 0x1113L;
-const long keyShmLogger = 0x1114L;
-const long keySemLibrary = 0x1115L;
+const long keySemLibrarian;
+const long keyShmLibrarian;
+const long keySemLogger;
+const long keyShmLogger;
+const long keySemLibrary;
 
 static Queue* queue = newQueue(NULL);
 static Regist** areas = (Regist**)memAlloc(MAX_REGISTS*sizeof(Regist*));
@@ -108,12 +108,11 @@ void initLogger()
    };
    union semun arg;
    arg.array = (ushort*) malloc(2*sizeof(ushort));
-   arg.array[0] = 25;//access semaphore
-   arg.array[1] = 0;//message semaphore
+
+	arg.array[0] = global->NUM_STUDENTS+5; //access semaphore
+	arg.array[1] = 0;//message semaphore
    semctl(semid_logger, 0, SETALL, arg);
 
-
-	// printf("SIZE:::::::::::::::::::%d\n", sizeof(Event) + 200);
 	shmid_logger = shmget(keyShmLogger, 216, IPC_CREAT | IPC_EXCL | 0660);
 
 }
@@ -189,11 +188,11 @@ void* processMessageChannel(void* arg)
 		char* str = ((char*)e) + 4;
 
 		Event* copyEvent = newEvent(i, strdup(str));
-      //DEBUG;
+      ////DEBUG;
       //printf("Receive %d  ID----->> %d text-----> %s\n",nrevents,copyEvent->logId,copyEvent->text);
-      //DEBUG;
+      ////DEBUG;
       //printEvent(copyEvent);
-      //DEBUG;
+      ////DEBUG;
       nrevents++;
       inQueue(queue, copyEvent);
 		pshmdt(e);
@@ -217,14 +216,12 @@ void sendLog(int logId, char* text)
       exit(EXIT_FAILURE);
    }
       
-
-
    psem_down(semid_logger, 0);
    char* memory = (char* )pshmat(shmid_logger, NULL, 0);
 	Event* ev = (Event*)memory;
 
    Event* e = newEvent(logId, text);
-	//DEBUG;
+	////DEBUG;
    //printf("Send %d\n",nreventsSend);
    //nreventsSend++;
 
@@ -233,7 +230,6 @@ void sendLog(int logId, char* text)
 	// pshmdt(memory);
 	psem_up(semid_logger, 1);
 }
-
 
 void* mainLogger(void* arg)
 {

@@ -169,7 +169,7 @@ int booksAvailableInLibrary(struct _Book_** books)
    int res = 1;
    for(int i = 0; res && books[i] != NULL; i++)
       res = library->bookAvailable[bookSearch(books[i])] > 0;
-   //DEBUG;
+   ////DEBUG;
 	//invariantLibrary();
 	//sendLog(library->logIdBookShelf, toStringBookShelfs());
    //psem_up(semid_lib,ACCESS_LIBRARY);
@@ -210,7 +210,7 @@ void requisiteBooksFromLibrary(struct _Book_** books)
    }
    sendLog(library->logIdBookShelf, toStringBookShelfs());
       
-   //DEBUG;
+   ////DEBUG;
    invariantLibrary();
 }
 

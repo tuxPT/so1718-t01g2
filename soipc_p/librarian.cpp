@@ -174,8 +174,10 @@ void* mainLibrarian(void* arg)
 
    life();
 
-   thread_join(messageThreadId,NULL);
-   return NULL;
+	psem_up(semid_librarian, 1);
+
+	thread_join(messageThreadId,NULL);
+	return NULL;
 }
 
 static void life()
@@ -254,6 +256,9 @@ void* outQueueShm(void* arg)
    {
       psem_down(semid_librarian, 1);
 
+		if (!aliveLibrarian())
+			break;
+
       Request* r = (Request* )pshmat(shmid_librarian, NULL, 0);
       int i = r->id;
       int j = r->requisited;
@@ -331,7 +336,7 @@ static void handleRequests()
          
          handleRequest(req);
 
-         spend(randomInt(global->MIN_HANDLE_REQUEST_TIME_UNITS, global->MAX_HANDLE_REQUEST_TIME_UNITS));
+         // spend(randomInt(global->MIN_HANDLE_REQUEST_TIME_UNITS, global->MAX_HANDLE_REQUEST_TIME_UNITS));
 
          sendLog(logId, toStringLibrarian());
 
@@ -351,21 +356,21 @@ static void collectBooks()
     * 2. check of pending requests can be attended (in order)
     * 3. Don't forget to spend time randomly in interval [global->MIN_HANDLE_REQUEST_TIME_UNITS, global->MAX_HANDLE_REQUEST_TIME_UNITS]
     **/
-    DEBUG;
+    //DEBUG;
    int semid_lib = semget(keySemLibrary, 0, 0);
    psem_down(semid_lib,ACCESS_LIBRARY);
    for(int seatNum = 0; seatNum < numSeats(); seatNum++)
    {
       if(not(seatOccupied(seatNum)) and booksInSeat(seatNum))
       {
-         DEBUG;
+         //DEBUG;
          collectBooksLibrary(seatNum); 
-         DEBUG;     
+         //DEBUG;     
       }
    }
    psem_up(semid_lib,ACCESS_LIBRARY);
    spend(randomInt(global->MIN_HANDLE_REQUEST_TIME_UNITS, global->MAX_HANDLE_REQUEST_TIME_UNITS));
-	DEBUG;
+	//DEBUG;
    sendLog(logId, toStringLibrarian());
 }
 
@@ -428,7 +433,7 @@ static void done()
     **/
    state = DONE;
 	sendLog(logId, toStringLibrarian());
-   //destroyLibrarian();
+   // destroyLibrarian();
 	 // printf("\n");
    // printf("done - librarian");
 }

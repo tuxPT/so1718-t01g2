@@ -157,21 +157,21 @@ int logIdStudent(struct _Student_* student)
 static void life(Student* student)
 {
    enrollUniversity(student);
-   //DEBUG;
+   ////DEBUG;
    for(int c = 0; c < student->numCourses; c++)
    {
-      DEBUG;
+      //DEBUG;
       enrollCourse(student);
       do
       {
          sleep(student);
-         //DEBUG;
+         ////DEBUG;
          //printf("LIFE !!!!!!!!!!!!!! %s -- %d\n ", student->name,student->state);
          eat(student, 0);
-         //DEBUG;
+         ////DEBUG;
          //printf("LIFE !!!!!!!!!!!!!!%s -- %d\n ", student->name,student->state);
          study(student);
-         //DEBUG;
+         ////DEBUG;
          //printf("LIFE !!!!!!!!!!!!!!%s -- %d\n ", student->name,student->state);
          eat(student, 1);
          //printf("LIFE !!!!!!!!!!!!!!%s -- %d\n ", student->name,student->state);
@@ -202,7 +202,7 @@ static void unEnrollUniversity(Student* student)
 {
    /* TODO: student should notify librarian */
    reqDisenrollStudent();
-   printf("goodbye        ------>>>%s !!!!!!!!!!!!\n",student->name);
+   // printf("goodbye        ------>>>%s !!!!!!!!!!!!\n",student->name);
    // printf("\n");
    // printf("unEnrollUniversity - %s \n", student->name);
    //signal(&librarian);
@@ -280,18 +280,18 @@ static void eat(Student* student, int meal) // 0: breakfast; 1: lunch; 2: dinner
 static void study(Student* student)
 {
    assert (student->completionPercentage == 100 || student->studyTime != NULL);
-   //DEBUG;
+   ////DEBUG;
    if (student->completionPercentage < 100)
    {
-      ////DEBUG;
+      //////DEBUG;
 		int n = chooseBooksToStudy(student); // (no need to understand the algorithm)
       int pos;
-      //DEBUG;
+      ////DEBUG;
 
       // 1: request librarian(now strait from library) to requisite chosen books (state: REQ_BOOKS), wait until available
       student->state = REQ_BOOKS;
 		sendLog(student->logId, toStringStudent(student));
-      //DEBUG;
+      ////DEBUG;
 
 		//waits for the books to be available
    
@@ -299,7 +299,7 @@ static void study(Student* student)
       requisiteBooksFromLibrary(student->studyBookList);
 
 
-      //DEBUG;
+      ////DEBUG;
       student->state = REQ_SEAT;
       sendLog(student->logId, toStringStudent(student));
       
